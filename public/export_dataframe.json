@@ -1,0 +1,487 @@
+{
+  "columns": [
+    "coordinate",
+    "grocery",
+    "school",
+    "transit"
+  ],
+  "index": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24
+  ],
+  "data": [
+    [
+      [
+        32.914167,
+        -117.247778
+      ],
+      [
+        "The Market at Seventh College",
+        0.0270738987
+      ],
+      [
+        "Golden Poppy Preschool & Infant Center (formerly A Brighter Future Preschool)",
+        0.0133094132
+      ],
+      [
+        "John Hopkins Ct & General Atomics",
+        0.0230932952
+      ]
+    ],
+    [
+      [
+        32.8975,
+        -117.247778
+      ],
+      [
+        "The Market at Seventh College",
+        0.0113249237
+      ],
+      [
+        "Golden Poppy Preschool & Infant Center (formerly A Brighter Future Preschool)",
+        0.0221580705
+      ],
+      [
+        "N Torrey Pines Rd & Genesee Av",
+        0.0088502522
+      ]
+    ],
+    [
+      [
+        32.880833,
+        -117.247778
+      ],
+      [
+        "Sixth College Place and Market",
+        0.0055392075
+      ],
+      [
+        "Beth Montessori",
+        0.0178449005
+      ],
+      [
+        "N Torrey Pines Rd & Almahurst Row",
+        0.003767744
+      ]
+    ],
+    [
+      [
+        32.864166,
+        -117.247778
+      ],
+      [
+        "THE CORNER Mercantile & Eatery",
+        0.0122800114
+      ],
+      [
+        "Torrey Pines Elementary School",
+        0.0065542653
+      ],
+      [
+        "La Jolla Village Dr & N Torrey Pines Rd",
+        0.0083387396
+      ]
+    ],
+    [
+      [
+        32.847499,
+        -117.247778
+      ],
+      [
+        "THE CORNER Mercantile & Eatery",
+        0.0087344446
+      ],
+      [
+        "The Children's School",
+        0.0062860809
+      ],
+      [
+        "La Jolla Village Dr & N Torrey Pines Rd",
+        0.0232565547
+      ]
+    ],
+    [
+      [
+        32.914167,
+        -117.231111
+      ],
+      [
+        "The Market at Seventh College",
+        0.0286718405
+      ],
+      [
+        "San Diego Divers",
+        0.001822648
+      ],
+      [
+        "John Hopkins Ct & General Atomics",
+        0.0208882345
+      ]
+    ],
+    [
+      [
+        32.8975,
+        -117.231111
+      ],
+      [
+        "Earl’s Place and Market",
+        0.0137459187
+      ],
+      [
+        "San Diego Divers",
+        0.0165932964
+      ],
+      [
+        "John Hopkins Ct & General Atomics",
+        0.0064578466
+      ]
+    ],
+    [
+      [
+        32.880833,
+        -117.231111
+      ],
+      [
+        "Earl’s Place and Market",
+        0.0036873802
+      ],
+      [
+        "Preuss School UCSD",
+        0.0091352728
+      ],
+      [
+        "San Diego (La Jolla - UC San Diego)",
+        0.0031359868
+      ]
+    ],
+    [
+      [
+        32.864166,
+        -117.231111
+      ],
+      [
+        "Trader Joe's",
+        0.0017685906
+      ],
+      [
+        "Beth Montessori",
+        0.0077937146
+      ],
+      [
+        "La Jolla Village Dr & Villa La Jolla Dr",
+        0.0075965683
+      ]
+    ],
+    [
+      [
+        32.847499,
+        -117.231111
+      ],
+      [
+        "Mana Food Co",
+        0.01671981
+      ],
+      [
+        "Mission Bay Montessori Academy",
+        0.0045554045
+      ],
+      [
+        "Gilman Dr & Evening Way",
+        0.0224498167
+      ]
+    ],
+    [
+      [
+        32.914167,
+        -117.214444
+      ],
+      [
+        "Eurofood Depot Gourmet Market",
+        0.0170744046
+      ],
+      [
+        "Tutor Doctor San Diego County",
+        0.0067282616
+      ],
+      [
+        "John Hopkins Ct & General Atomics",
+        0.0299151162
+      ]
+    ],
+    [
+      [
+        32.8975,
+        -117.214444
+      ],
+      [
+        "Eurofood Depot Gourmet Market",
+        0.0111359153
+      ],
+      [
+        "San Diego Tech Center",
+        0.0132591483
+      ],
+      [
+        "Genesee Av & Scripps Hospital",
+        0.0150561429
+      ]
+    ],
+    [
+      [
+        32.880833,
+        -117.214444
+      ],
+      [
+        "Earl’s Place and Market",
+        0.0189557473
+      ],
+      [
+        "La Jolla Country Day School",
+        0.003197071
+      ],
+      [
+        "Genesee Av & Scripps Hospital",
+        0.0083937069
+      ]
+    ],
+    [
+      [
+        32.864166,
+        -117.214444
+      ],
+      [
+        "Vons",
+        0.0091856387
+      ],
+      [
+        "Doyle Elementary School",
+        0.0062159263
+      ],
+      [
+        "La Jolla Village Dr & Villa La Jolla Dr",
+        0.020050887
+      ]
+    ],
+    [
+      [
+        32.847499,
+        -117.214444
+      ],
+      [
+        "Sprouts Farmers Market",
+        0.0041234512
+      ],
+      [
+        "Standley Middle School",
+        0.0100000511
+      ],
+      [
+        "La Jolla Village Dr & Villa La Jolla Dr",
+        0.0303998659
+      ]
+    ],
+    [
+      [
+        32.914167,
+        -117.197777
+      ],
+      [
+        "Eurofood Depot Gourmet Market",
+        0.0146585729
+      ],
+      [
+        "Tutor Doctor San Diego County",
+        0.0168037966
+      ],
+      [
+        "Genesee Av & Scripps Hospital",
+        0.038318389
+      ]
+    ],
+    [
+      [
+        32.8975,
+        -117.197777
+      ],
+      [
+        "Eurofood Depot Gourmet Market",
+        0.0068809212
+      ],
+      [
+        "San Diego Tech Center",
+        0.0042306646
+      ],
+      [
+        "Genesee Av & Scripps Hospital",
+        0.0275043276
+      ]
+    ],
+    [
+      [
+        32.880833,
+        -117.197777
+      ],
+      [
+        "Eurofood Depot Gourmet Market",
+        0.0208661968
+      ],
+      [
+        "Torah High School-San Diego",
+        0.0131103553
+      ],
+      [
+        "Genesee Av & Scripps Hospital",
+        0.0245001002
+      ]
+    ],
+    [
+      [
+        32.864166,
+        -117.197777
+      ],
+      [
+        "Snack Shop",
+        0.0117186653
+      ],
+      [
+        "University City High School",
+        0.0092087328
+      ],
+      [
+        "Genesee Av & Scripps Hospital",
+        0.0316164445
+      ]
+    ],
+    [
+      [
+        32.847499,
+        -117.197777
+      ],
+      [
+        "Vons",
+        0.0081307271
+      ],
+      [
+        "Marie Curie Elementary School",
+        0.0088793844
+      ],
+      [
+        "La Jolla Village Dr & Villa La Jolla Dr",
+        0.0427090136
+      ]
+    ],
+    [
+      [
+        32.914167,
+        -117.18111
+      ],
+      [
+        "Eurofood Depot Gourmet Market",
+        0.0263398938
+      ],
+      [
+        "San Diego Tech Center",
+        0.0277061398
+      ],
+      [
+        "Genesee Av & Scripps Hospital",
+        0.0505339224
+      ]
+    ],
+    [
+      [
+        32.8975,
+        -117.18111
+      ],
+      [
+        "Eurofood Depot Gourmet Market",
+        0.0229404298
+      ],
+      [
+        "San Diego Tech Center",
+        0.0203855294
+      ],
+      [
+        "Genesee Av & Scripps Hospital",
+        0.0429169711
+      ]
+    ],
+    [
+      [
+        32.880833,
+        -117.18111
+      ],
+      [
+        "Eurofood Depot Gourmet Market",
+        0.0302376324
+      ],
+      [
+        "San Diego Tech Center",
+        0.0248814632
+      ],
+      [
+        "Genesee Av & Scripps Hospital",
+        0.0410564646
+      ]
+    ],
+    [
+      [
+        32.864166,
+        -117.18111
+      ],
+      [
+        "Vons",
+        0.0245531286
+      ],
+      [
+        "Marie Curie Elementary School",
+        0.0230368365
+      ],
+      [
+        "Genesee Av & Scripps Hospital",
+        0.0456615587
+      ]
+    ],
+    [
+      [
+        32.847499,
+        -117.18111
+      ],
+      [
+        "Vons",
+        0.0229324643
+      ],
+      [
+        "Marie Curie Elementary School",
+        0.0225285458
+      ],
+      [
+        "Genesee Av & Scripps Hospital",
+        0.0551352915
+      ]
+    ]
+  ]
+}
