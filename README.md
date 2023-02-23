@@ -12,3 +12,14 @@ pip install -r requirements.txt
 ```
 python3 living_condition_heatmap/manage.py runserver 127.0.0.1:800
 ```
+
+## Running React Web Applicaiton locally
+Obtain Mapbox access key from https://www.mapbox.com/
+
+Add to `src/App.js` `mapboxgl.accessToken = '';`
+
+```
+cd web
+npm install
+npm start
+```
