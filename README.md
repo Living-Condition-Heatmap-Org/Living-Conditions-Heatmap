@@ -19,6 +19,7 @@ Obtain Mapbox access key from https://www.mapbox.com/
 Add to `src/App.js` `mapboxgl.accessToken = '';`
 
 ```
+cd web
 npm install
 npm start
 ```
