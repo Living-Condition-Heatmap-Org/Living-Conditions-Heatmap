@@ -1,11 +1,12 @@
 import React, { useRef, useEffect, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import * as turf from '@turf/turf'
+import { GoogleLogin } from '@react-oauth/google';
 
-mapboxgl.accessToken = '';
+mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN;
 
 
-function Mapbox() {
+function App() {
     const mapContainer = useRef(null);
     const map = useRef(null);
     const [lng, setLng] = useState(-117.2376); // eslint-disable-line no-unused-vars
@@ -178,12 +179,22 @@ function Mapbox() {
 
     return (
         <div>
-      <div className="sidebar">
-        Longitude: {lng} | Latitude: {lat} | Zoom: {zoom} | click : {flag == true}
-      </div>
-      <div ref={mapContainer} className="map-container" />
-    </div>
+            <div className="sidebar">
+            Longitude: {lng} | Latitude: {lat} | Zoom: {zoom} | click : {flag == true}
+            </div>
+            <div ref={mapContainer} className="map-container" />
+            <GoogleLogin
+                onSuccess={credentialResponse => {
+                console.log(credentialResponse);
+                }}
+            
+                onError={() => {
+                console.log('Login Failed');
+                }}
+                useOneTap
+            />
+        </div>
     );
 }
 
-export default Mapbox;
+export default App;
