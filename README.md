@@ -24,6 +24,5 @@ npm start
 ## Running Swagger for Local Mock APIs
 You need Docker Desktop for this.
 ```
-cd web
-npm run mockapi
+docker run --rm -it -p 3001:4010 -v ${PWD}:/tmp -P stoplight/prism:4 mock -h 0.0.0.0 --cors /tmp/docs/openapi.yaml
 ```
