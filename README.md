@@ -10,7 +10,7 @@ pip install -r requirements.txt
 
 ## To run the server:
 ```
-python3 living_condition_heatmap/manage.py runserver 127.0.0.1:800
+python3 living_condition_heatmap/manage.py runserver 127.0.0.1:8000
 ```
 
 ## Running React Web Applicaiton locally
