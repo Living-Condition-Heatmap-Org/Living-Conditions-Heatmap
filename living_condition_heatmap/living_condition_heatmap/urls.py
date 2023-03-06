@@ -15,10 +15,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from update_db import views as db_views
+from rate import views as rate_views
 
-from . import views
+# from . import views
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('hello/', views.hello),
+    path('getRating/', rate_views.get_rating),
+    path('updateRating/', rate_views.update_rating),
+    path('getScores/', db_views.get_location_scores)
 ]
