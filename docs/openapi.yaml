@@ -1,0 +1,125 @@
+openapi: "3.0.3"
+info:
+  title: "Living Conditions Heatmap API"
+  description: "Documentation of the APIs used for the Living Conditions Heatmap service."
+  version: "1.0.0"
+servers:
+- url: "http://localhost:3001"
+  description: "Local mock server"
+tags:
+  - name: "React"
+    description: APIs called by the frontend.
+paths:
+  "/getRating":
+    get:
+      tags:
+        - "React"
+      summary: Get a list of previous ratings by a user.
+      description: Get a list of rating of a locations given by a user previously.
+      operationId: getRating
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreviousRatings"
+      security:
+        - JWT: []
+  "/updateRating":
+    put:
+      tags:
+        - "React"
+      summary: Save a rating of a location given by a user.
+      description: Save a new rating or update a existing rating by a user to a specific location.
+      operationId: updateRating
+      requestBody:
+        description: A new rating and its location.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                score: {type: integer, example: 5}
+                latitude: {type: number, example: 32.8811}
+                longitude: {type: number, example: -117.2376}
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+      security:
+        - JWT: []
+  "/getScores":
+    get:
+      tags:
+        - "React"
+      summary: Get a list of locations with scores for each criteria.
+      description: 
+        Get a list of locations with scores for each criteria, generated from the data scraped using Google Maps API.
+        Ideally, this API should take a location and return only its neighboring points.
+      operationId: getScores
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Scores"
+      security:
+        - JWT: []
+  "/getRecommendation":
+    get:
+      tags:
+        - "React"
+      summary: Get a list of recommended locations for a user.
+      description: 
+        Run a recommendation algorithm and return a list of recommended locations for a user.
+        Ideally, this API should take a location, and the recommendation algorithm only considers its neighboring points for recommendation.
+        Yet, our service is limited in San Diego now, so let's drop that for now.
+      operationId: getRecommendation
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recommendations"
+      security:
+        - JWT: []
+components:
+  schemas:
+    PreviousRatings:
+      type: array
+      items:
+        type: object
+        properties:
+          rating: { type: integer, example: 5 }
+          latitude: { type: number, example: 32.8811 }
+          longitude: { type: number, example: -117.2376 }
+    Recommendations:
+      type: array
+      items:
+        type: object
+        properties:
+          rating: { type: integer, example: 5 }
+          latitude: { type: number, example: 32.8811 }
+          longitude: { type: number, example: -117.2376 }
+    Scores:
+      type: array
+      items:
+        type: object
+        properties:
+          latitude: { type: number, example: 32.8811 }
+          longitude: { type: number, example: -117.2376 }
+          walkScore: { type: integer, example: 50 }
+          bikeScore: { type: integer, example: 50 }
+          transitScore: { type: integer, example: 50 }
+          soundScore: { type: integer, example: 50 }
+          nearestGrocery: { type: number, example: 0.1 }
+          nearestSchool: { type: number, example: 0.1 }
+          nearestTransit: { type: number, example: 0.1 }
+  securitySchemes:
+    JWT:
+      type: apiKey
+      name: access_token
+      in: header
