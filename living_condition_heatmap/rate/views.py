@@ -34,8 +34,8 @@ def update_rating(request):
         response = HttpResponse()
         response['Access-Control-Allow-Origin'] = 'http://localhost:8000'
         response['Access-Control-Allow-Credentials'] = 'true'
-        response['Access-Control-Allow-Headers'] = "Content-Type, Accept, X-CSRFToken"
-        response['Access-Control-Allow-Methods'] = "PUT, OPTIONS"
+        response['Access-Control-Allow-Headers'] = "Authorization, Content-Type, Accept, X-CSRFToken"
+        response['Access-Control-Allow-Methods'] = "PUT, OPTIONS, HEAD"
         return response
 
     data = json.loads(request.body)

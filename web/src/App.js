@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import * as turf from '@turf/turf'
-import { GoogleLogin } from '@react-oauth/google';
+import { GoogleLogin, useGoogleLogin, googleLogout} from '@react-oauth/google';
 import axios from 'axios';
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN;
@@ -15,36 +15,9 @@ function App() {
     const [zoom, setZoom] = useState(13); // eslint-disable-line no-unused-vars
     const [flag, setFlag] = useState(false); // eslint-disable-line no-unused-vars
 
-    // const [getScores, setGetScores] = useState([])
 
-    // useEffect(() => {
-    //     axios.get('http://localhost:8000/getScores')
-    //     .then(res => {
-    //         setGetScores(res.data);
-    //         console.log("res.data");
-    //         console.log(res.data);
-    //     })
-    // }, [])
-
-    // const [data, setData] = useState([]);
-    // const getData = () => {
-    //     fetch('export_dataframe.json', {
-    //             headers: {
-    //                 'Content-Type': 'application/json',
-    //                 'Accept': 'application/json'
-    //             }
-    //         })
-    //         .then(function(response) {
-    //             console.log(response)
-    //             return response.json();
-    //         })
-    //         .then(function(myJson) {
-    //             console.log(myJson);
-    //             setData(myJson);
-    //         });
-    // }
-
-
+    const [ user, setUser ] = useState([]);
+    const [ profile, setProfile ] = useState([]);
 
     useEffect(() => {
         if (map.current) return;
@@ -57,14 +30,8 @@ function App() {
         });
 
         const fetchData = async () => {
-            // const data = await fetch('export_dataframe.json');
-            // const data_json = await data.json();
-
             const res = await axios.get('http://localhost:8000/getScores');
             const data_json = res.data;
-            console.log("data_json");
-            console.log(data_json);
-
 
             let bounds = { 'NE': { 'lat': 90, 'lng': 180 }, 'SW': { 'lat': -90, 'lng': -180 } }
             for (let i = 0; i < data_json.length; i++) {
@@ -102,8 +69,6 @@ function App() {
                 idx++;
             }
 
-            // 0: SE
-            // 24: NW
             const colorRamp = ["#feebe2", "#fcc5c0", "#fa9fb5", "#f768a1", "#dd3497", "#ae017e", "#7a0177"]
 
             var cellSide = 0.5;
@@ -123,8 +88,6 @@ function App() {
                 grid.features[i].properties.bin = heatmap_val;
             }
 
-            console.log(`squareGrid - after:`, grid);
-
             map.current.on('load', () => {
                 console.log(`-- Loaded --`);
                 map.current.addSource('grid-source', {
@@ -136,10 +99,6 @@ function App() {
                     'id': 'grid-layer',
                     'type': 'fill',
                     'source': 'grid-source',
-                    // 'paint': {
-                    //   'fill-outline-color': 'rgba(0,0,0,0.1)',
-                    //   'fill-color': 'rgba(0,0,0,0.1)'
-                    // }
                     'paint': {
                         'fill-color': {
                             property: 'bin',
@@ -160,7 +119,6 @@ function App() {
                     //'filter': ['==', ['get', 'highlighted'], 'Yes']
                     'filter': ['==', ['get', 'id'], -1]
                 });
-
 
                 //click action
                 map.current.on('click', 'grid-layer', function(e) {
@@ -200,22 +158,67 @@ function App() {
         });
     });
 
+    const login = useGoogleLogin({
+        onSuccess: (codeResponse) => setUser(codeResponse),
+        onError: (error) => console.log('Login Failed:', error)
+    });
+
+    useEffect(
+        () => {
+            if (user) {
+                axios
+                    .get(`https://www.googleapis.com/oauth2/v1/userinfo?access_token=${user.access_token}`, {
+                        headers: {
+                            Authorization: `Bearer ${user.access_token}`,
+                            Accept: 'application/json'
+                        }
+                    })
+                    .then((res) => {
+                        setProfile(res.data);
+                        axios.defaults.headers.put['Authorization'] = `Bearer ${user.access_token}`;
+                    })
+                    .catch((err) => console.log(err));
+            }
+        },
+        [ user ]
+    );
+
+    const logOut = () => {
+        googleLogout();
+        setProfile(null);
+    };
+
     return (
         <div>
             <div className="sidebar">
             Longitude: {lng} | Latitude: {lat} | Zoom: {zoom} | click : {flag == true}
             </div>
             <div ref={mapContainer} className="map-container" />
-            <GoogleLogin
+
+            {profile ? (
+                <div>
+                    <img src={profile.picture} alt="user image" />
+                    <h3>User Logged in</h3>
+                    <p>Name: {profile.name}</p>
+                    <p>Email Address: {profile.email}</p>
+                    <br />
+                    <br />
+                    <button onClick={logOut}>Log out</button>
+                </div>
+            ) : (
+                <button onClick={() => login()}>Sign in with Google 🚀 </button>
+            )}
+
+            {/* <GoogleLogin
                 onSuccess={credentialResponse => {
-                console.log(credentialResponse);
+                    console.log(credentialResponse);
                 }}
             
                 onError={() => {
-                console.log('Login Failed');
+                    console.log('Login Failed');
                 }}
                 useOneTap
-            />
+            /> */}
         </div>
     );
 }
