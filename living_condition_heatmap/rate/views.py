@@ -28,6 +28,16 @@ def get_rating(request):
 
 
 def update_rating(request):
+    # CORS preflight request
+    # This is necessary only for local env.
+    if request.method == 'OPTIONS':
+        response = HttpResponse()
+        response['Access-Control-Allow-Origin'] = 'http://localhost:8000'
+        response['Access-Control-Allow-Credentials'] = 'true'
+        response['Access-Control-Allow-Headers'] = "Content-Type, Accept, X-CSRFToken"
+        response['Access-Control-Allow-Methods'] = "PUT, OPTIONS"
+        return response
+
     data = json.loads(request.body)
     latitude = data['latitude']
     longitude = data['longitude']

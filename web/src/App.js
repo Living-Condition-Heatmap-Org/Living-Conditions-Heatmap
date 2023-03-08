@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import * as turf from '@turf/turf'
 import { GoogleLogin } from '@react-oauth/google';
+import axios from 'axios';
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN;
 
@@ -14,23 +15,34 @@ function App() {
     const [zoom, setZoom] = useState(13); // eslint-disable-line no-unused-vars
     const [flag, setFlag] = useState(false); // eslint-disable-line no-unused-vars
 
-    const [data, setData] = useState([]);
-    const getData = () => {
-        fetch('export_dataframe.json', {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
-            })
-            .then(function(response) {
-                console.log(response)
-                return response.json();
-            })
-            .then(function(myJson) {
-                console.log(myJson);
-                setData(myJson);
-            });
-    }
+    // const [getScores, setGetScores] = useState([])
+
+    // useEffect(() => {
+    //     axios.get('http://localhost:8000/getScores')
+    //     .then(res => {
+    //         setGetScores(res.data);
+    //         console.log("res.data");
+    //         console.log(res.data);
+    //     })
+    // }, [])
+
+    // const [data, setData] = useState([]);
+    // const getData = () => {
+    //     fetch('export_dataframe.json', {
+    //             headers: {
+    //                 'Content-Type': 'application/json',
+    //                 'Accept': 'application/json'
+    //             }
+    //         })
+    //         .then(function(response) {
+    //             console.log(response)
+    //             return response.json();
+    //         })
+    //         .then(function(myJson) {
+    //             console.log(myJson);
+    //             setData(myJson);
+    //         });
+    // }
 
 
 
@@ -45,14 +57,19 @@ function App() {
         });
 
         const fetchData = async () => {
-            const data = await fetch('export_dataframe.json');
-            const data_json = await data.json();
+            // const data = await fetch('export_dataframe.json');
+            // const data_json = await data.json();
+
+            const res = await axios.get('http://localhost:8000/getScores');
+            const data_json = res.data;
+            console.log("data_json");
+            console.log(data_json);
 
 
             let bounds = { 'NE': { 'lat': 90, 'lng': 180 }, 'SW': { 'lat': -90, 'lng': -180 } }
-            for (let i = 0; i < data_json['data'].length; i++) {
-                const lat = data_json['data'][i][0][0];
-                const lng = data_json['data'][i][0][1];
+            for (let i = 0; i < data_json.length; i++) {
+                const lat = data_json[i]['latitude'];
+                const lng = data_json[i]['longitude'];
                 if (lat < bounds.NE.lat) bounds.NE.lat = lat;
                 if (lat > bounds.SW.lat) bounds.SW.lat = lat;
                 if (lng < bounds.NE.lng) bounds.NE.lng = lng;
@@ -61,10 +78,10 @@ function App() {
 
             let heatmap_bounds = { 'max': 0, 'min': 1 };
             let grid_map = new Map();
-            for (let i = 0; i < data_json['data'].length; i++) {
-                const lat = data_json['data'][i][0][0];
-                const lng = data_json['data'][i][0][1];
-                const val = data_json['data'][i][1][1];
+            for (let i = 0; i < data_json.length; i++) {
+                const lat = data_json[i]['latitude'];
+                const lng = data_json[i]['longitude'];
+                const val = data_json[i]['walkScore'];
 
                 if (!grid_map.has(lat)) {
                     grid_map.set(lat, new Map());
@@ -158,6 +175,12 @@ function App() {
                     const filter = ['==', ['number', ['get', 'id']], selectIndex];
 
                     map.current.setFilter('grid-layer-highlighted', filter);
+
+                    axios.put("http://localhost:8000/updateRating/", {
+                        score: 1,
+                        latitude: 32.4324,
+                        longitude: -127.3423,
+                    });
                 });
             });
         }
