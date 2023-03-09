@@ -106,5 +106,8 @@ def get_api_keys(env_path):
         hlapikey = f.readline().strip().split('=')[1]
 
 if __name__ == '__main__':
+    if len(sys.argv) != 3:
+        print('Usage: python populate_json.py <chris_data_path> <env_path>')
+        exit(1)
     get_api_keys(sys.argv[2])
     dump_table(sys.argv[1])
