@@ -2,6 +2,7 @@ import json
 import requests
 import sys
 import time
+from tqdm import tqdm
 
 wsapikey = ''
 hlapikey = ''
@@ -19,7 +20,17 @@ def get_ws_scores(lat, lon):
         'wsapikey': wsapikey
     }
     r = requests.get(ws_base_url, params=ws_params).json()
-    return r['walkscore'], r['bike']['score'], r['transit']['score']
+    retry_count = 0
+    while 'bike' not in r.keys() or 'transit' not in r.keys() and retry_count < 5:
+        retry_count += 1
+        print('Walkscore API error! Waiting for 5s.')
+        print(f"{'bike' in r.keys()=}; {'transit' in r.keys()=}; {r=}")
+        time.sleep(5)
+        r = requests.get(ws_base_url, params=ws_params).json()
+    if retry_count == 5:
+        print('Walkscore API error! Skipping this location.')
+    return (r['walkscore'] if 'walkscore' in r else None, r['bike']['score'] if 'bike' in r and 'score' in r['bike'] else None, r['transit']['score'] if 'transit' in r and 'score' in r['transit'] else None)
+    # return r['walkscore'], r['bike']['score'], r['transit']['score']
 
 def get_hl_score(lat, lon):
     hl_params = { 'lat': lat, 'lng': lon } 
@@ -29,8 +40,8 @@ def get_hl_score(lat, lon):
         print(r['message'] + '! Waiting for 10s.')
         time.sleep(10)
         r = requests.get(hl_url, params=hl_params, headers=hl_headers).json()
-    # print(r)
-    return r['result'][0]['score']
+    time.sleep(1)
+    return r['result'][0]['score'] if r['status'] != 'ZERO_RESULTS' else None
 
 def decode_lat_lng_key(key):
     # 0th digit is 1, allows leading zero for sign digit
@@ -64,8 +75,10 @@ def dump_table(chris_path):
     dist_data = load_chris_data(chris_path)
     coords = [d[0] for d in dist_data]
 
-    ws_scores = [get_ws_scores(lat, lng) for lat, lng in coords]
-    hl_scores = [get_hl_score(lat, lng) for lat, lng in coords]
+    print("Getting walk scores...")
+    ws_scores = [get_ws_scores(lat, lng) for lat, lng in tqdm(coords)]
+    print("Getting sound scores...")
+    hl_scores = [get_hl_score(lat, lng) for lat, lng in tqdm(coords)]
 
     db_json = []
     for i, (lat, lng) in enumerate(coords):
@@ -77,13 +90,21 @@ def dump_table(chris_path):
                 "bike_score": ws_scores[i][1],
                 "transit_score": ws_scores[i][2],
                 "sound_score": hl_scores[i],
-                "grocery_dist": dist_data[i][1][1],
-                "school_dist": dist_data[i][2][1],
-                "transit_dist": dist_data[i][3][1]
+                "grocery_dist": dist_data[i][1],
+                "school_dist": dist_data[i][3],
+                "transit_dist": dist_data[i][5]
             }
         })
     with open('custom_export.json', 'w') as f:
         json.dump(db_json, f)
 
+def get_api_keys(env_path):
+    with open(env_path) as f:
+        global wsapikey
+        global hlapikey
+        wsapikey = f.readline().strip().split('=')[1]
+        hlapikey = f.readline().strip().split('=')[1]
+
 if __name__ == '__main__':
+    get_api_keys(sys.argv[2])
     dump_table(sys.argv[1])
