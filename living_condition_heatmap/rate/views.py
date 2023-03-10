@@ -1,14 +1,16 @@
 from django.shortcuts import render
-
 from django.http import HttpResponse
 from rate.models import Rating
 from .utils.location import format_location
+from .utils.user import get_user
 import json
+import requests
+from django.conf import settings
     
  
 def get_rating(request):
-    # todo: jwt token authorization for user key
-    ratings = Rating.objects.filter(user_key=100)
+    user_key = get_user(request)
+    ratings = Rating.objects.filter(user_key=user_key)
     ratings = list(ratings)
     ratings_response = []
     for rating in ratings:
@@ -44,8 +46,8 @@ def update_rating(request):
     rating = int(data['score'])
     location_int = format_location(latitude, longitude)
     try:
-        # todo: jwt token authorization for user key
-        r = Rating(user_key=100, lat_lng_key=location_int, rate=rating)
+        user_key = get_user(request)
+        r = Rating(user_key=user_key, lat_lng_key=location_int, rate=rating)
         r.save()
         return HttpResponse(json.dumps({"code": 0}))
     except Exception as err:
