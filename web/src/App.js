@@ -4,7 +4,19 @@ import * as turf from '@turf/turf'
 import { GoogleLogin, useGoogleLogin, googleLogout} from '@react-oauth/google';
 import axios from 'axios';
 
+import Select from 'react-select'
+
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN;
+
+const prefOptions = [
+    { value: 'walk', label: 'Walk Score' },
+    { value: 'bike', label: 'Bike Score' },
+    { value: 'transit', label: 'Transit Score' },
+    { value: 'sound', label: 'Sound Score' },
+    // { value: 'grocery', label: 'Vanilla' },
+    // { value: 'school', label: 'Vanilla' },
+    // { value: '', label: 'Vanilla' }
+];
 
 
 function App() {
@@ -19,8 +31,30 @@ function App() {
     const [ user, setUser ] = useState([]);
     const [ profile, setProfile ] = useState([]);
 
+
+    const [selectedOption, setSelectedOption] = useState(prefOptions[0]);
+      
+    const MyComponent = () => (
+        // <Select options={prefOptions} />
+        <Select
+            defaultValue={selectedOption}
+            onChange={setSelectedOption}
+            options={prefOptions}
+        />
+    )
+
     useEffect(() => {
-        if (map.current) return;
+        console.log("useEffect");
+        // if (!map.current) {
+        //     map.current = new mapboxgl.Map({
+        //         container: mapContainer.current,
+        //         style: 'mapbox://styles/mapbox/outdoors-v11',
+        //         center: [lng, lat],
+        //         zoom: zoom,
+        //         scrollZoom: true
+        //     });
+        // }
+
         map.current = new mapboxgl.Map({
             container: mapContainer.current,
             style: 'mapbox://styles/mapbox/outdoors-v11',
@@ -45,10 +79,20 @@ function App() {
 
             let heatmap_bounds = { 'max': 0, 'min': 1 };
             let grid_map = new Map();
+            console.log("selectedOption");
+            console.log(selectedOption);
             for (let i = 0; i < data_json.length; i++) {
                 const lat = data_json[i]['latitude'];
                 const lng = data_json[i]['longitude'];
-                const val = data_json[i]['walkScore'];
+
+                let val = data_json[i]['walkScore'];
+                if (selectedOption) {
+                    if (selectedOption.value == 'walk') val = data_json[i]['walkScore'];
+                    if (selectedOption.value == 'bike') val = data_json[i]['bikeScore'];
+                    if (selectedOption.value == 'transit') val = data_json[i]['transitScore'];
+                    if (selectedOption.value == 'sound') val = data_json[i]['soundScore'];
+                }
+                
 
                 if (!grid_map.has(lat)) {
                     grid_map.set(lat, new Map());
@@ -147,7 +191,7 @@ function App() {
 
         // Clean up on unmount
         return () => map.current.remove();
-    }, []);
+    }, [selectedOption]);
 
     useEffect(() => {
         if (!map.current) return; // wait for map to initialize
@@ -208,6 +252,7 @@ function App() {
             ) : (
                 <button onClick={() => login()}>Sign in with Google 🚀 </button>
             )}
+            <MyComponent/>
 
             {/* <GoogleLogin
                 onSuccess={credentialResponse => {
