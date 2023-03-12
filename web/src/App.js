@@ -4,7 +4,13 @@ import * as turf from '@turf/turf'
 import { GoogleLogin, useGoogleLogin, googleLogout} from '@react-oauth/google';
 import axios from 'axios';
 
-import Select from 'react-select'
+import "normalize.css";
+
+
+import { Grid, Box } from '@material-ui/core';
+import { createTheme } from "@material-ui/core/styles";
+import { Stack, Slider, Typography } from '@mui/material';
+import Header from './components/Header';
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN;
 
@@ -17,6 +23,17 @@ const prefOptions = [
     // { value: 'school', label: 'Vanilla' },
     // { value: '', label: 'Vanilla' }
 ];
+
+// const theme = createTheme({
+//     palette: {
+//         primary: {
+//         main: "#006400"
+//         },
+//         secondary: {
+//         main: "#ffa500"
+//         }
+//     }
+//     });
 
 
 function App() {
@@ -31,29 +48,38 @@ function App() {
     const [ user, setUser ] = useState([]);
     const [ profile, setProfile ] = useState([]);
 
+    const [sliderWalkWeight, setSliderWalkWeight] = useState(100);
+    const [sliderBikeWeight, setSliderBikeWeight] = useState(0);
+    const [sliderTransitWeight, setSliderTransitWeight] = useState(0);
+    const [sliderSoundWeight, setSliderSoundWeight] = useState(0);
 
-    const [selectedOption, setSelectedOption] = useState(prefOptions[0]);
-      
-    const MyComponent = () => (
-        // <Select options={prefOptions} />
-        <Select
-            defaultValue={selectedOption}
-            onChange={setSelectedOption}
-            options={prefOptions}
-        />
-    )
+    // useEffect(() => {
+    //     console.log("useEffect");
+    //     // if (!map.current) {
+    //     //     map.current = new mapboxgl.Map({
+    //     //         container: mapContainer.current,
+    //     //         style: 'mapbox://styles/mapbox/outdoors-v11',
+    //     //         center: [lng, lat],
+    //     //         zoom: zoom,
+    //     //         scrollZoom: true
+    //     //     });
+    //     // }
+
+    //     map.current = new mapboxgl.Map({
+    //         container: mapContainer.current,
+    //         style: 'mapbox://styles/mapbox/outdoors-v11',
+    //         center: [lng, lat],
+    //         zoom: zoom,
+    //         scrollZoom: true
+    //     });
+
+        
+
+    //     // Clean up on unmount
+    //     return () => map.current.remove();
+    // }, [selectedOption]);
 
     useEffect(() => {
-        console.log("useEffect");
-        // if (!map.current) {
-        //     map.current = new mapboxgl.Map({
-        //         container: mapContainer.current,
-        //         style: 'mapbox://styles/mapbox/outdoors-v11',
-        //         center: [lng, lat],
-        //         zoom: zoom,
-        //         scrollZoom: true
-        //     });
-        // }
 
         map.current = new mapboxgl.Map({
             container: mapContainer.current,
@@ -79,21 +105,20 @@ function App() {
 
             let heatmap_bounds = { 'max': 0, 'min': 1 };
             let grid_map = new Map();
-            console.log("selectedOption");
-            console.log(selectedOption);
             for (let i = 0; i < data_json.length; i++) {
                 const lat = data_json[i]['latitude'];
                 const lng = data_json[i]['longitude'];
 
-                let val = data_json[i]['walkScore'];
-                if (selectedOption) {
-                    if (selectedOption.value == 'walk') val = data_json[i]['walkScore'];
-                    if (selectedOption.value == 'bike') val = data_json[i]['bikeScore'];
-                    if (selectedOption.value == 'transit') val = data_json[i]['transitScore'];
-                    if (selectedOption.value == 'sound') val = data_json[i]['soundScore'];
-                }
-                
+                let val_walk = data_json[i]['walkScore'];
+                let val_bike = data_json[i]['bikeScore'];
+                let val_transit = data_json[i]['transitScore'];
+                let val_sound = data_json[i]['soundScore'];
 
+                let val = val_walk * sliderWalkWeight
+                    + val_bike * sliderBikeWeight
+                    + val_transit * sliderTransitWeight
+                    + val_sound * sliderSoundWeight;
+                
                 if (!grid_map.has(lat)) {
                     grid_map.set(lat, new Map());
                 }
@@ -191,7 +216,7 @@ function App() {
 
         // Clean up on unmount
         return () => map.current.remove();
-    }, [selectedOption]);
+    }, [sliderWalkWeight, sliderBikeWeight, sliderTransitWeight, sliderSoundWeight]);
 
     useEffect(() => {
         if (!map.current) return; // wait for map to initialize
@@ -233,38 +258,50 @@ function App() {
     };
 
     return (
-        <div>
-            <div className="sidebar">
-            Longitude: {lng} | Latitude: {lat} | Zoom: {zoom} | click : {flag == true}
-            </div>
-            <div ref={mapContainer} className="map-container" />
+        <Box sx={{ flexGrow: 1 }} bgcolor="primary.main">
+            <Grid item>
+                <Header />
+            </Grid>
+            <Grid item container>
+                <Grid item sm={2}>
+                    <Stack sx={{ p: 2 }}>
+                        <Typography>
+                            Walk Score Weight
+                        </Typography>
+                        <Slider onChangeCommitted={(_, v) => setSliderWalkWeight(v)} defaultValue={100}/>
+                        <Typography>
+                            Bike Score Weight
+                        </Typography>
+                        <Slider onChangeCommitted={(_, v) => setSliderBikeWeight(v)}/>
+                        <Typography>
+                            Transit Score Weight
+                        </Typography>
+                        <Slider onChangeCommitted={(_, v) => setSliderTransitWeight(v)}/>
+                        <Typography>
+                            Sound Score Weight
+                        </Typography>
+                        <Slider onChangeCommitted={(_, v) => setSliderSoundWeight(v)}/>
+                    </Stack>
+                </Grid>
+                <Grid item sm={10}>
+                    <div ref={mapContainer} className="map-container" />
 
-            {profile ? (
-                <div>
-                    <img src={profile.picture} alt="user image" />
-                    <h3>User Logged in</h3>
-                    <p>Name: {profile.name}</p>
-                    <p>Email Address: {profile.email}</p>
-                    <br />
-                    <br />
-                    <button onClick={logOut}>Log out</button>
-                </div>
-            ) : (
-                <button onClick={() => login()}>Sign in with Google 🚀 </button>
-            )}
-            <MyComponent/>
-
-            {/* <GoogleLogin
-                onSuccess={credentialResponse => {
-                    console.log(credentialResponse);
-                }}
-            
-                onError={() => {
-                    console.log('Login Failed');
-                }}
-                useOneTap
-            /> */}
-        </div>
+                    {profile ? (
+                        <div>
+                            <img src={profile.picture} alt="user image" />
+                            <h3>User Logged in</h3>
+                            <p>Name: {profile.name}</p>
+                            <p>Email Address: {profile.email}</p>
+                            <br />
+                            <br />
+                            <button onClick={logOut}>Log out</button>
+                        </div>
+                    ) : (
+                        <button onClick={() => login()}>Sign in with Google 🚀 </button>
+                    )}
+                </Grid>
+            </Grid>
+        </Box>
     );
 }
 
