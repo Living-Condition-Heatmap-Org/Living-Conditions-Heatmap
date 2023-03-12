@@ -18,10 +18,10 @@ def validate_hl_score(score):
 
 class Location(models.Model):
     lat_lng_key = models.PositiveBigIntegerField(primary_key=True, validators=[RegexValidator(LAT_LNG_FORMAT)])
-    walk_score = models.PositiveSmallIntegerField(validators=[validate_ws_score])
-    bike_score = models.PositiveSmallIntegerField(validators=[validate_ws_score])
-    transit_score = models.PositiveSmallIntegerField(validators=[validate_ws_score])
-    sound_score = models.PositiveSmallIntegerField(validators=[validate_hl_score])
+    walk_score = models.PositiveSmallIntegerField(validators=[validate_ws_score], null=True)
+    bike_score = models.PositiveSmallIntegerField(validators=[validate_ws_score], null=True)
+    transit_score = models.PositiveSmallIntegerField(validators=[validate_ws_score], null=True)
+    sound_score = models.PositiveSmallIntegerField(validators=[validate_hl_score], null=True)
     grocery_dist = models.FloatField()
     school_dist = models.FloatField()
     transit_dist = models.FloatField()
