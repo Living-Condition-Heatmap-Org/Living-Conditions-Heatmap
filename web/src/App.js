@@ -45,7 +45,7 @@ function App() {
     const [flag, setFlag] = useState(false); // eslint-disable-line no-unused-vars
 
 
-    const [ user, setUser ] = useState([]);
+    const [ user, setUser ] = useState(null);
     const [ profile, setProfile ] = useState([]);
 
     const [sliderWalkWeight, setSliderWalkWeight] = useState(100);
@@ -53,33 +53,16 @@ function App() {
     const [sliderTransitWeight, setSliderTransitWeight] = useState(0);
     const [sliderSoundWeight, setSliderSoundWeight] = useState(0);
 
-    // useEffect(() => {
-    //     console.log("useEffect");
-    //     // if (!map.current) {
-    //     //     map.current = new mapboxgl.Map({
-    //     //         container: mapContainer.current,
-    //     //         style: 'mapbox://styles/mapbox/outdoors-v11',
-    //     //         center: [lng, lat],
-    //     //         zoom: zoom,
-    //     //         scrollZoom: true
-    //     //     });
-    //     // }
+    const [ useScores, setUserScores ] = useState(null);
+    const getData = async () => {
+        axios.get('http://localhost:8000/getScores').then(response => {
+            setUserScores(response.data);
+        });
+    }
 
-    //     map.current = new mapboxgl.Map({
-    //         container: mapContainer.current,
-    //         style: 'mapbox://styles/mapbox/outdoors-v11',
-    //         center: [lng, lat],
-    //         zoom: zoom,
-    //         scrollZoom: true
-    //     });
-
-        
-
-    //     // Clean up on unmount
-    //     return () => map.current.remove();
-    // }, [selectedOption]);
-
+    // Initial setup
     useEffect(() => {
+        getData();
 
         map.current = new mapboxgl.Map({
             container: mapContainer.current,
@@ -88,150 +71,145 @@ function App() {
             zoom: zoom,
             scrollZoom: true
         });
+    }, []);
 
-        const fetchData = async () => {
-            const res = await axios.get('http://localhost:8000/getScores');
-            const data_json = res.data;
+    // Called when scores are downloaded or updated
+    useEffect(() => {
 
-            let bounds = { 'NE': { 'lat': 90, 'lng': 180 }, 'SW': { 'lat': -90, 'lng': -180 } }
-            for (let i = 0; i < data_json.length; i++) {
-                const lat = data_json[i]['latitude'];
-                const lng = data_json[i]['longitude'];
-                if (lat < bounds.NE.lat) bounds.NE.lat = lat;
-                if (lat > bounds.SW.lat) bounds.SW.lat = lat;
-                if (lng < bounds.NE.lng) bounds.NE.lng = lng;
-                if (lng > bounds.SW.lng) bounds.SW.lng = lng;
-            }
+        if (!useScores) return;
+        if (!map.current) return;
 
-            let heatmap_bounds = { 'max': 0, 'min': 1 };
-            let grid_map = new Map();
-            for (let i = 0; i < data_json.length; i++) {
-                const lat = data_json[i]['latitude'];
-                const lng = data_json[i]['longitude'];
+        const data_json = useScores;
 
-                let val_walk = data_json[i]['walkScore'];
-                let val_bike = data_json[i]['bikeScore'];
-                let val_transit = data_json[i]['transitScore'];
-                let val_sound = data_json[i]['soundScore'];
-
-                let val = val_walk * sliderWalkWeight
-                    + val_bike * sliderBikeWeight
-                    + val_transit * sliderTransitWeight
-                    + val_sound * sliderSoundWeight;
-                
-                if (!grid_map.has(lat)) {
-                    grid_map.set(lat, new Map());
-                }
-
-                grid_map.get(lat).set(lng, val);
-
-                if (val < heatmap_bounds.min) heatmap_bounds.min = val;
-                if (val > heatmap_bounds.max) heatmap_bounds.max = val;
-            }
-            grid_map = new Map([...grid_map.entries()].sort());
-
-            let idx = 0;
-            let grid_array = new Array(grid_map.size);
-            for (let [key, value] of grid_map.entries()) {
-                const tmp_map = new Map([...value.entries()].sort());
-                grid_array[idx] = Array.from(tmp_map.values());
-                idx++;
-            }
-
-            const colorRamp = ["#feebe2", "#fcc5c0", "#fa9fb5", "#f768a1", "#dd3497", "#ae017e", "#7a0177"]
-
-            var cellSide = 0.5;
-            var grid = turf.squareGrid([bounds.SW.lng, bounds.SW.lat, bounds.NE.lng, bounds.NE.lat], cellSide, 'kilometers');
-
-            for (let i = 0; i < grid.features.length; i++) {
-                grid.features[i].properties.highlighted = 'No';
-                grid.features[i].properties.id = i;
-
-                const lng = grid.features[i].geometry.coordinates[0][0][0];
-                const lat = grid.features[i].geometry.coordinates[0][0][1];
-
-                const lng_idx = Math.floor((lng - bounds.NE.lng) / (bounds.SW.lng - bounds.NE.lng) * grid_array.length);
-                const lat_idx = Math.floor((lat - bounds.SW.lat) / (bounds.NE.lat - bounds.SW.lat) * grid_array.length);
-
-                const heatmap_val = ((grid_array[lat_idx][lng_idx] - heatmap_bounds.min) / (heatmap_bounds.max - heatmap_bounds.min) * 5)
-                grid.features[i].properties.bin = heatmap_val;
-            }
-
-            map.current.on('load', () => {
-                console.log(`-- Loaded --`);
-                map.current.addSource('grid-source', {
-                    'type': "geojson",
-                    'data': grid,
-                    'generateId': true
-                });
-                map.current.addLayer({
-                    'id': 'grid-layer',
-                    'type': 'fill',
-                    'source': 'grid-source',
-                    'paint': {
-                        'fill-color': {
-                            property: 'bin',
-                            stops: colorRamp.map((d, i) => [i, d])
-                        },
-                        'fill-opacity': 0.4
-                    }
-                });
-                map.current.addLayer({
-                    'id': 'grid-layer-highlighted',
-                    'type': 'fill',
-                    'source': 'grid-source',
-                    'paint': {
-                        'fill-outline-color': '#484896',
-                        'fill-color': '#6e599f',
-                        'fill-opacity': 0.75
-                    },
-                    //'filter': ['==', ['get', 'highlighted'], 'Yes']
-                    'filter': ['==', ['get', 'id'], -1]
-                });
-
-                //click action
-                map.current.on('click', 'grid-layer', function(e) {
-                    var selectIndex = e.features[0].id;
-                    grid.features[e.features[0].id].properties.highlighted = 'Yes';
-                    console.log(`highlighted before:`, e.features[0].properties.highlighted);
-                    e.features[0].properties.highlighted = 'Yes';
-                    console.log(`feature:`, e.features[0]);
-                    console.log(`selectIndex:`, selectIndex);
-                    console.log(`highlighted after:`, e.features[0].properties.highlighted);
-
-                    const filter = ['==', ['number', ['get', 'id']], selectIndex];
-
-                    map.current.setFilter('grid-layer-highlighted', filter);
-
-                    axios.put("http://localhost:8000/updateRating/", {
-                        score: 1,
-                        latitude: 32.4324,
-                        longitude: -127.3423,
-                    });
-                });
-            });
+        let bounds = { 'NE': { 'lat': 90, 'lng': 180 }, 'SW': { 'lat': -90, 'lng': -180 } }
+        for (let i = 0; i < data_json.length; i++) {
+            const lat = data_json[i]['latitude'];
+            const lng = data_json[i]['longitude'];
+            if (lat < bounds.NE.lat) bounds.NE.lat = lat;
+            if (lat > bounds.SW.lat) bounds.SW.lat = lat;
+            if (lng < bounds.NE.lng) bounds.NE.lng = lng;
+            if (lng > bounds.SW.lng) bounds.SW.lng = lng;
         }
 
-        fetchData()
+        let heatmap_bounds = { 'max': 0, 'min': 1 };
+        let grid_map = new Map();
+        for (let i = 0; i < data_json.length; i++) {
+            const lat = data_json[i]['latitude'];
+            const lng = data_json[i]['longitude'];
+
+            let val_walk = data_json[i]['walkScore'];
+            let val_bike = data_json[i]['bikeScore'];
+            let val_transit = data_json[i]['transitScore'];
+            let val_sound = data_json[i]['soundScore'];
+
+            let val = val_walk * sliderWalkWeight
+                + val_bike * sliderBikeWeight
+                + val_transit * sliderTransitWeight
+                + val_sound * sliderSoundWeight;
+            
+            if (!grid_map.has(lat)) {
+                grid_map.set(lat, new Map());
+            }
+
+            grid_map.get(lat).set(lng, val);
+
+            if (val < heatmap_bounds.min) heatmap_bounds.min = val;
+            if (val > heatmap_bounds.max) heatmap_bounds.max = val;
+        }
+        grid_map = new Map([...grid_map.entries()].sort());
+
+        let idx = 0;
+        let grid_array = new Array(grid_map.size);
+        for (let [key, value] of grid_map.entries()) {
+            const tmp_map = new Map([...value.entries()].sort());
+            grid_array[idx] = Array.from(tmp_map.values());
+            idx++;
+        }
+
+        const colorRamp = ["#feebe2", "#fcc5c0", "#fa9fb5", "#f768a1", "#dd3497", "#ae017e", "#7a0177"]
+
+        var cellSide = 0.5;
+        var grid = turf.squareGrid([bounds.SW.lng, bounds.SW.lat, bounds.NE.lng, bounds.NE.lat], cellSide, 'kilometers');
+
+        for (let i = 0; i < grid.features.length; i++) {
+            grid.features[i].properties.highlighted = 'No';
+            grid.features[i].properties.id = i;
+
+            const lng = grid.features[i].geometry.coordinates[0][0][0];
+            const lat = grid.features[i].geometry.coordinates[0][0][1];
+
+            const lng_idx = Math.floor((lng - bounds.NE.lng) / (bounds.SW.lng - bounds.NE.lng) * grid_array.length);
+            const lat_idx = Math.floor((lat - bounds.SW.lat) / (bounds.NE.lat - bounds.SW.lat) * grid_array.length);
+
+            const heatmap_val = ((grid_array[lat_idx][lng_idx] - heatmap_bounds.min) / (heatmap_bounds.max - heatmap_bounds.min) * 5)
+            grid.features[i].properties.bin = heatmap_val;
+        }
+
+        map.current.on('load', () => {
+            console.log(`-- Loaded --`);
+            map.current.addSource('grid-source', {
+                'type': "geojson",
+                'data': grid,
+                'generateId': true
+            });
+            map.current.addLayer({
+                'id': 'grid-layer',
+                'type': 'fill',
+                'source': 'grid-source',
+                'paint': {
+                    'fill-color': {
+                        property: 'bin',
+                        stops: colorRamp.map((d, i) => [i, d])
+                    },
+                    'fill-opacity': 0.4
+                }
+            });
+            map.current.addLayer({
+                'id': 'grid-layer-highlighted',
+                'type': 'fill',
+                'source': 'grid-source',
+                'paint': {
+                    'fill-outline-color': '#484896',
+                    'fill-color': '#6e599f',
+                    'fill-opacity': 0.75
+                },
+                //'filter': ['==', ['get', 'highlighted'], 'Yes']
+                'filter': ['==', ['get', 'id'], -1]
+            });
+
+            //click action
+            map.current.on('click', 'grid-layer', function(e) {
+                var selectIndex = e.features[0].id;
+                grid.features[e.features[0].id].properties.highlighted = 'Yes';
+                console.log(`highlighted before:`, e.features[0].properties.highlighted);
+                e.features[0].properties.highlighted = 'Yes';
+                console.log(`feature:`, e.features[0]);
+                console.log(`selectIndex:`, selectIndex);
+                console.log(`highlighted after:`, e.features[0].properties.highlighted);
+
+                const filter = ['==', ['number', ['get', 'id']], selectIndex];
+
+                map.current.setFilter('grid-layer-highlighted', filter);
+
+                axios.put("http://localhost:8000/updateRating/", {
+                    score: 1,
+                    latitude: 32.4324,
+                    longitude: -127.3423,
+                });
+            });
+        });
 
         // Clean up on unmount
         return () => map.current.remove();
-    }, [sliderWalkWeight, sliderBikeWeight, sliderTransitWeight, sliderSoundWeight]);
+    }, [useScores, sliderWalkWeight, sliderBikeWeight, sliderTransitWeight, sliderSoundWeight]);
 
-    useEffect(() => {
-        if (!map.current) return; // wait for map to initialize
-        map.current.on('move', () => {
-            setLng(map.current.getCenter().lng.toFixed(4));
-            setLat(map.current.getCenter().lat.toFixed(4));
-            setZoom(map.current.getZoom().toFixed(2));
-        });
-    });
 
     const login = useGoogleLogin({
         onSuccess: (codeResponse) => setUser(codeResponse),
         onError: (error) => console.log('Login Failed:', error)
     });
 
+    // Request user meta data upon successfull login.
     useEffect(
         () => {
             if (user) {
