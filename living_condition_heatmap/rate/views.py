@@ -47,8 +47,13 @@ def update_rating(request):
     location_int = format_location(latitude, longitude)
     try:
         user_key = get_user(request)
-        r = Rating(user_key=user_key, lat_lng_key=location_int, rate=rating)
-        r.save()
+        ratings = Rating.objects.filter(user_key=user_key, lat_lng_key=location_int)
+        ratings = list(ratings)
+        if len(ratings) == 0:
+            r = Rating(user_key=user_key, lat_lng_key=location_int, rate=rating)
+            r.save()
+        else:
+            Rating.objects.filter(user_key=user_key, lat_lng_key=location_int).update(rate=rating)
         return HttpResponse(json.dumps({"code": 0}))
     except Exception as err:
         print(err)
