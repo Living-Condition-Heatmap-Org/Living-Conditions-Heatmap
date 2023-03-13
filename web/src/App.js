@@ -1,39 +1,74 @@
 import React, { useRef, useEffect, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import * as turf from '@turf/turf'
-import { GoogleLogin, useGoogleLogin, googleLogout} from '@react-oauth/google';
+import { useGoogleLogin, googleLogout} from '@react-oauth/google';
 import axios from 'axios';
 
 import "normalize.css";
 
-
+import PropTypes from 'prop-types';
 import { Grid, Box } from '@material-ui/core';
-import { createTheme } from "@material-ui/core/styles";
-import { Stack, Slider, Typography } from '@mui/material';
+import { createTheme, ThemeProvider } from "@material-ui/core/styles";
+import { Stack, Slider, Typography, Button, Rating } from '@mui/material';
+import DialogTitle from '@mui/material/DialogTitle';
+import Dialog from '@mui/material/Dialog';
+
 import Header from './components/Header';
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN;
 
-const prefOptions = [
-    { value: 'walk', label: 'Walk Score' },
-    { value: 'bike', label: 'Bike Score' },
-    { value: 'transit', label: 'Transit Score' },
-    { value: 'sound', label: 'Sound Score' },
-    // { value: 'grocery', label: 'Vanilla' },
-    // { value: 'school', label: 'Vanilla' },
-    // { value: '', label: 'Vanilla' }
-];
+const theme = createTheme({
+    typography: {
+        fontSize: 24,
+    },
+    palette: {
+        primary: {
+            main: "#182B49"
+        },
+        secondary: {
+            main: "#ffa500"
+        }
+    }
+});
 
-// const theme = createTheme({
-//     palette: {
-//         primary: {
-//         main: "#006400"
-//         },
-//         secondary: {
-//         main: "#ffa500"
-//         }
-//     }
-//     });
+const colorRamp = ["#feebe2", "#fcc5c0", "#fa9fb5", "#f768a1", "#dd3497", "#ae017e", "#7a0177"]
+
+function findCenter(loc) {
+    const x = (loc[0][0] + loc[1][0] + loc[2][0] + loc[3][0]) / 4;
+    const y = (loc[0][1] + loc[1][1] + loc[2][1] + loc[3][1]) / 4;
+    return [x, y];
+}
+
+
+function SimpleDialog(props) {
+    const { onClose, open, onClick } = props;
+
+    const handleClose = () => {
+        onClose();
+    };
+
+    return (
+        <Dialog onClose={handleClose} open={open}>
+        <DialogTitle>How do you rate this location?</DialogTitle>
+        <Box sx={{ mb: 2, mt: -1 }}>
+            <center>
+                <Rating
+                    name="simple-controlled"
+                    onChange={(event, newValue) => {
+                        onClick(newValue);
+                    }}
+                />
+            </center>
+        </Box>
+        </Dialog>
+    );
+}
+
+SimpleDialog.propTypes = {
+    onClose: PropTypes.func.isRequired,
+    open: PropTypes.bool.isRequired,
+    onClick: PropTypes.func.isRequired,
+};
 
 
 function App() {
@@ -42,44 +77,63 @@ function App() {
     const [lng, setLng] = useState(-117.2376); // eslint-disable-line no-unused-vars
     const [lat, setLat] = useState(32.8811); // eslint-disable-line no-unused-vars
     const [zoom, setZoom] = useState(13); // eslint-disable-line no-unused-vars
-    const [flag, setFlag] = useState(false); // eslint-disable-line no-unused-vars
-
 
     const [ user, setUser ] = useState(null);
-    const [ profile, setProfile ] = useState([]);
+    const [ profile, setProfile ] = useState(null);
 
     const [sliderWalkWeight, setSliderWalkWeight] = useState(100);
     const [sliderBikeWeight, setSliderBikeWeight] = useState(0);
     const [sliderTransitWeight, setSliderTransitWeight] = useState(0);
     const [sliderSoundWeight, setSliderSoundWeight] = useState(0);
 
-    const [ useScores, setUserScores ] = useState(null);
-    const getData = async () => {
+    const [ defaultScores, setDefaultScores ] = useState(null);
+    const getScores = async () => {
         axios.get('http://localhost:8000/getScores').then(response => {
-            setUserScores(response.data);
+            setDefaultScores(response.data);
         });
     }
 
-    // Initial setup
-    useEffect(() => {
-        getData();
-
-        map.current = new mapboxgl.Map({
-            container: mapContainer.current,
-            style: 'mapbox://styles/mapbox/outdoors-v11',
-            center: [lng, lat],
-            zoom: zoom,
-            scrollZoom: true
+    const [ userRatings, setUserRatings ] = useState(null);
+    const getUserRatings = async () => {
+        axios.get('http://localhost:8000/getRating/').then(response => {
+            setUserRatings(response.data);
+            console.log(response.data);
         });
-    }, []);
+    }
 
-    // Called when scores are downloaded or updated
-    useEffect(() => {
+    // Popup window for rating
+    const [open, setOpen] = React.useState(false);
+    const [uiRatingValue, setUiRatingValue] = React.useState(2);
+    const [uiRatingLat, setUiRatingLat] = useState(null);
+    const [uiRatingLng, setUiRatingLng] = useState(null);
 
-        if (!useScores) return;
-        if (!map.current) return;
+    // Click event for the opening the popup window.
+    const handleClickOpen = (lat, lng) => {
+        setOpen(true);
+        setUiRatingLat(lat);
+        setUiRatingLng(lng);
+    };
 
-        const data_json = useScores;
+    // Close event for the popup window.
+    const handleClose = () => {
+        setOpen(false);
+
+        axios.put("http://localhost:8000/updateRating/", {
+            score: uiRatingValue,
+            latitude: uiRatingLat,
+            longitude: uiRatingLng,
+        });
+    };
+
+    // Click event for the star rating on the popup window.
+    const handleClick = (value) => {
+        setUiRatingValue(value);
+    };
+
+
+    const updateHeatmap = () => {
+
+        const data_json = defaultScores;
 
         let bounds = { 'NE': { 'lat': 90, 'lng': 180 }, 'SW': { 'lat': -90, 'lng': -180 } }
         for (let i = 0; i < data_json.length; i++) {
@@ -126,8 +180,6 @@ function App() {
             idx++;
         }
 
-        const colorRamp = ["#feebe2", "#fcc5c0", "#fa9fb5", "#f768a1", "#dd3497", "#ae017e", "#7a0177"]
-
         var cellSide = 0.5;
         var grid = turf.squareGrid([bounds.SW.lng, bounds.SW.lat, bounds.NE.lng, bounds.NE.lat], cellSide, 'kilometers');
 
@@ -135,8 +187,10 @@ function App() {
             grid.features[i].properties.highlighted = 'No';
             grid.features[i].properties.id = i;
 
-            const lng = grid.features[i].geometry.coordinates[0][0][0];
-            const lat = grid.features[i].geometry.coordinates[0][0][1];
+            const [lng, lat] = findCenter(grid.features[i].geometry.coordinates[0]);
+
+            grid.features[i].properties.lat = lat;
+            grid.features[i].properties.lng = lng;
 
             const lng_idx = Math.floor((lng - bounds.NE.lng) / (bounds.SW.lng - bounds.NE.lng) * grid_array.length);
             const lat_idx = Math.floor((lat - bounds.SW.lat) / (bounds.NE.lat - bounds.SW.lat) * grid_array.length);
@@ -144,6 +198,30 @@ function App() {
             const heatmap_val = ((grid_array[lat_idx][lng_idx] - heatmap_bounds.min) / (heatmap_bounds.max - heatmap_bounds.min) * 5)
             grid.features[i].properties.bin = heatmap_val;
         }
+
+        return grid;
+    }
+
+    // Initial setup
+    useEffect(() => {
+        getScores();
+
+        map.current = new mapboxgl.Map({
+            container: mapContainer.current,
+            style: 'mapbox://styles/mapbox/outdoors-v11',
+            center: [lng, lat],
+            zoom: zoom,
+            scrollZoom: true
+        });
+    }, []);
+
+    // Called when scores are downloaded or updated
+    useEffect(() => {
+
+        if (!defaultScores) return;
+        if (!map.current) return;
+
+        const grid = updateHeatmap();
 
         map.current.on('load', () => {
             console.log(`-- Loaded --`);
@@ -176,32 +254,17 @@ function App() {
                 //'filter': ['==', ['get', 'highlighted'], 'Yes']
                 'filter': ['==', ['get', 'id'], -1]
             });
-
-            //click action
-            map.current.on('click', 'grid-layer', function(e) {
-                var selectIndex = e.features[0].id;
-                grid.features[e.features[0].id].properties.highlighted = 'Yes';
-                console.log(`highlighted before:`, e.features[0].properties.highlighted);
-                e.features[0].properties.highlighted = 'Yes';
-                console.log(`feature:`, e.features[0]);
-                console.log(`selectIndex:`, selectIndex);
-                console.log(`highlighted after:`, e.features[0].properties.highlighted);
-
-                const filter = ['==', ['number', ['get', 'id']], selectIndex];
-
-                map.current.setFilter('grid-layer-highlighted', filter);
-
-                axios.put("http://localhost:8000/updateRating/", {
-                    score: 1,
-                    latitude: 32.4324,
-                    longitude: -127.3423,
-                });
-            });
         });
 
         // Clean up on unmount
         return () => map.current.remove();
-    }, [useScores, sliderWalkWeight, sliderBikeWeight, sliderTransitWeight, sliderSoundWeight]);
+    }, [defaultScores]);
+
+    useEffect(() => {
+        if (!defaultScores) return;
+        const grid = updateHeatmap();
+        map.current.getSource('grid-source').setData(grid);
+    }, [sliderWalkWeight, sliderBikeWeight, sliderTransitWeight, sliderSoundWeight]);
 
 
     const login = useGoogleLogin({
@@ -222,9 +285,29 @@ function App() {
                     })
                     .then((res) => {
                         setProfile(res.data);
-                        axios.defaults.headers.put['Authorization'] = `Bearer ${user.access_token}`;
                     })
                     .catch((err) => console.log(err));
+
+                axios.defaults.headers.put['Authorization'] = `Bearer ${user.access_token}`;
+                axios.defaults.headers.get['Authorization'] = `Bearer ${user.access_token}`;
+    
+                getUserRatings();
+
+                // Register click event for the rating.
+                const grid = updateHeatmap();
+                map.current.on('click', 'grid-layer', function(e) {
+                    var selectIndex = e.features[0].id;
+                    grid.features[e.features[0].id].properties.highlighted = 'Yes';
+                    e.features[0].properties.highlighted = 'Yes';
+
+                    const filter = ['==', ['number', ['get', 'id']], selectIndex];
+
+                    map.current.setFilter('grid-layer-highlighted', filter);
+
+                    handleClickOpen(grid.features[e.features[0].id].properties.lat, grid.features[e.features[0].id].properties.lng);
+                });
+                map.current.getSource('grid-source').setData(grid);
+
             }
         },
         [ user ]
@@ -233,53 +316,55 @@ function App() {
     const logOut = () => {
         googleLogout();
         setProfile(null);
+        setUser(null);
     };
 
-    return (
-        <Box sx={{ flexGrow: 1 }} bgcolor="primary.main">
-            <Grid item>
-                <Header />
-            </Grid>
-            <Grid item container>
-                <Grid item sm={2}>
-                    <Stack sx={{ p: 2 }}>
-                        <Typography>
-                            Walk Score Weight
-                        </Typography>
-                        <Slider onChangeCommitted={(_, v) => setSliderWalkWeight(v)} defaultValue={100}/>
-                        <Typography>
-                            Bike Score Weight
-                        </Typography>
-                        <Slider onChangeCommitted={(_, v) => setSliderBikeWeight(v)}/>
-                        <Typography>
-                            Transit Score Weight
-                        </Typography>
-                        <Slider onChangeCommitted={(_, v) => setSliderTransitWeight(v)}/>
-                        <Typography>
-                            Sound Score Weight
-                        </Typography>
-                        <Slider onChangeCommitted={(_, v) => setSliderSoundWeight(v)}/>
-                    </Stack>
-                </Grid>
-                <Grid item sm={10}>
-                    <div ref={mapContainer} className="map-container" />
+    function LoginComponent() {
+        if (profile) return <Button variant="contained" onClick={logOut}>Log out</Button>
+        else return <Button variant="contained" onClick={() => login()}>Log in</Button>
+    }
 
-                    {profile ? (
-                        <div>
-                            <img src={profile.picture} alt="user image" />
-                            <h3>User Logged in</h3>
-                            <p>Name: {profile.name}</p>
-                            <p>Email Address: {profile.email}</p>
-                            <br />
-                            <br />
-                            <button onClick={logOut}>Log out</button>
-                        </div>
-                    ) : (
-                        <button onClick={() => login()}>Sign in with Google 🚀 </button>
-                    )}
+
+    return (
+        <ThemeProvider theme={theme}>
+            <Box sx={{ flexGrow: 1 }} bgcolor="primary.main">
+                <Grid item>
+                    <Header />
                 </Grid>
-            </Grid>
-        </Box>
+                <Grid item container>
+                    <Grid item sm={2}>
+                        <Stack sx={{ p: 3 }}>
+                            <Typography color="common.white" variant="body2">
+                                Walk Score Weight
+                            </Typography>
+                            <Slider onChangeCommitted={(_, v) => setSliderWalkWeight(v)} defaultValue={100}/>
+                            <Typography color="common.white" variant="body2">
+                                Bike Score Weight
+                            </Typography>
+                            <Slider onChangeCommitted={(_, v) => setSliderBikeWeight(v)}/>
+                            <Typography color="common.white" variant="body2">
+                                Transit Score Weight
+                            </Typography>
+                            <Slider onChangeCommitted={(_, v) => setSliderTransitWeight(v)}/>
+                            <Typography color="common.white" variant="body2">
+                                Sound Score Weight
+                            </Typography>
+                            <Slider onChangeCommitted={(_, v) => setSliderSoundWeight(v)}/>
+                            <br/>
+                            <LoginComponent/>
+                        </Stack>
+                    </Grid>
+                    <Grid item sm={10}>
+                        <div ref={mapContainer} className="map-container" />
+                    </Grid>
+                </Grid>
+            </Box>
+            <SimpleDialog
+                open={open}
+                onClose={handleClose}
+                onClick={handleClick}
+            />
+        </ThemeProvider>
     );
 }
 
