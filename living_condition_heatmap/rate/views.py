@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from rate.models import Rating
-from .utils.location import format_location, unformat_location
+from .utils.location import format_location, unformat_location, find_nearest_location
 from .utils.user import get_user
 import json
 import requests
@@ -57,6 +57,7 @@ def update_rating(request):
     longitude = data['longitude']
     rating = int(data['score'])
     location_int = format_location(latitude, longitude)
+    location_int = find_nearest_location(location_int)
     try:
         user_key = get_user(request)
         ratings = Rating.objects.filter(user_key=user_key, lat_lng_key=location_int)
