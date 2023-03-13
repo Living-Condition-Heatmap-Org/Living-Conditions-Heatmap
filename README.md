@@ -25,6 +25,7 @@ npm start
 You need Docker Desktop for this.
 ```
 docker run --rm -it -p 3001:4010 -v ${PWD}:/tmp -P stoplight/prism:4 mock -h 0.0.0.0 --cors /tmp/docs/openapi.yaml
+```
 
 ## Populating the database with locations and their desirability scores (make sure you are in the `heatmap` conda env)
 ```
