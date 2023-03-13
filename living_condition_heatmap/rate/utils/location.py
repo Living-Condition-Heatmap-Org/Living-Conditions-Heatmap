@@ -25,5 +25,15 @@ def format_location(latitude, longitude):
     result += str(round(longitude - int(longitude), 4))[2:]
     return int(result)
 
+def unformat_location(location_int):
+    lat_lng_key = str(location_int)
+    lat = int(lat_lng_key[2:8]) / 10000
+    if lat_lng_key[1] == "1":
+        lat = -lat
+    lng = int(lat_lng_key[9:]) / 10000
+    if lat_lng_key[8] == "1":
+        lng = -lng
+    return (lat, lng)
+
 if __name__ == "__main__":
     print(format_location(+45.1234, -123.4567))

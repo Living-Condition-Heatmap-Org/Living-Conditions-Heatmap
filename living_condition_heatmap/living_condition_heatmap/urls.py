@@ -23,5 +23,6 @@ from rate import views as rate_views
 urlpatterns = [
     path('getRating/', rate_views.get_rating),
     path('updateRating/', rate_views.update_rating),
-    path('getScores/', db_views.get_location_scores)
+    path('getScores/', db_views.get_location_scores),
+    path('getRecommendation/', rate_views.get_recommendation)
 ]
