@@ -4,8 +4,8 @@ import * as turf from '@turf/turf'
 import { useGoogleLogin, googleLogout} from '@react-oauth/google';
 import axios from 'axios';
 
+// Styles using MUI Library
 import "normalize.css";
-
 import PropTypes from 'prop-types';
 import { Grid, Box } from '@material-ui/core';
 import { createTheme, ThemeProvider } from "@material-ui/core/styles";
@@ -31,15 +31,17 @@ const theme = createTheme({
     }
 });
 
+// Color map for the heatmap
 const colorRamp = ["#feebe2", "#fcc5c0", "#fa9fb5", "#f768a1", "#dd3497", "#ae017e", "#7a0177"]
 
+// Find the center coordinates from 4 corners
 function findCenter(loc) {
     const x = (loc[0][0] + loc[1][0] + loc[2][0] + loc[3][0]) / 4;
     const y = (loc[0][1] + loc[1][1] + loc[2][1] + loc[3][1]) / 4;
     return [x, y];
 }
 
-
+// UI and click-events for the rating popup window
 function SimpleDialog(props) {
     const { onClose, open, onClick } = props;
 
@@ -139,10 +141,12 @@ function App() {
     };
 
 
+    // Returns the grid object that can be used for updating the heatmap; no side effect.
     const updateHeatmap = () => {
 
         const data_json = defaultScores;
 
+        // Find the bounds of the heatmap.
         let bounds = { 'NE': { 'lat': 90, 'lng': 180 }, 'SW': { 'lat': -90, 'lng': -180 } }
         for (let i = 0; i < data_json.length; i++) {
             const lat = data_json[i]['latitude'];
@@ -152,7 +156,6 @@ function App() {
             if (lng < bounds.NE.lng) bounds.NE.lng = lng;
             if (lng > bounds.SW.lng) bounds.SW.lng = lng;
         }
-        console.log("bounds", bounds);
 
         let heatmap_bounds = { 'max': 0, 'min': 1 };
         let grid_map = new Map();
@@ -188,29 +191,22 @@ function App() {
             grid_array[idx] = Array.from(tmp_map.values());
             idx++;
         }
-        console.log("grid_array", grid_array);
 
         const lat_unit = (bounds.SW.lat - bounds.NE.lat) / 4.;
         const lng_unit = (bounds.SW.lng - bounds.NE.lng) / 4.;
-        console.log("lat_unit", lat_unit);
-        console.log("lng_unit", lng_unit);
-
         const boundsExtended = { 
             'NE': { 'lat': bounds.NE.lat - lat_unit, 'lng': bounds.NE.lng - lng_unit }, 
             'SW': { 'lat': bounds.SW.lat + lat_unit, 'lng': bounds.SW.lng + lng_unit } 
         }
-        console.log("boundsExtended", boundsExtended);
 
+        // 1 degree in latitude is about 111 kilometers.
         let cellSide = lat_unit * 111;
-        console.log("cellSide", cellSide);
 
         var grid = turf.squareGrid([
             boundsExtended.SW.lng, 
             boundsExtended.SW.lat, 
             boundsExtended.NE.lng, 
             boundsExtended.NE.lat], cellSide, 'kilometers');
-        
-        console.log("grid", grid);
 
         for (let i = 0; i < grid.features.length; i++) {
             grid.features[i].properties.highlighted = 'No';
@@ -289,6 +285,7 @@ function App() {
         return () => map.current.remove();
     }, [defaultScores]);
 
+    // Update the heatmap when the slider value changes.
     useEffect(() => {
         if (!defaultScores) return;
         const grid = updateHeatmap();
@@ -318,6 +315,7 @@ function App() {
                     })
                     .catch((err) => console.log(err));
 
+                // Add Google access token for PUT and GET requests from now on.
                 axios.defaults.headers.put['Authorization'] = `Bearer ${user.access_token}`;
                 axios.defaults.headers.get['Authorization'] = `Bearer ${user.access_token}`;
     
@@ -367,13 +365,9 @@ function App() {
         getRecommendation();
     }
 
+    // Show the best recommended location on the map.
     useEffect(() => {
         if (!userRecommendation) return;
-
-        console.log(userRecommendation[0]);
-        console.log(userRecommendation[0]['latitude']);
-
-
         const marker1 = new mapboxgl.Marker()
             .setLngLat([userRecommendation[0]['longitude'], userRecommendation[0]['latitude']])
             .addTo(map.current);
