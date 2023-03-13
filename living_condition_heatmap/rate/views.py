@@ -38,7 +38,7 @@ def get_rating(request):
             "latitude": lat,
             "longitude": lng
         })
-    return HttpResponse(ratings_response)
+    return HttpResponse(json.dumps(ratings_response))
 
 
 def update_rating(request):
@@ -77,10 +77,9 @@ def get_recommendation(request):
     user_key = get_user(request)
     train_model()
     recommendations = calculate_recommendations(user_key)
-    print(recommendations)
     recommendation_list = []
     for location_int in recommendations:
-        recommendation_list.append({"rating": recommendations[location_int], "latitude": unformat_location(location_int)[0], "longitude": unformat_location(location_int)[1]})
+        recommendation_list.append({"rating": float(recommendations[location_int]), "latitude": unformat_location(location_int)[0], "longitude": unformat_location(location_int)[1]})
     # sort by the rating from high to low
     recommendation_list.sort(key=lambda rec: -rec["rating"])
-    return HttpResponse(recommendation_list)
+    return HttpResponse(json.dumps(recommendation_list))
