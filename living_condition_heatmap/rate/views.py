@@ -1,11 +1,13 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from rate.models import Rating
-from .utils.location import format_location
+from .utils.location import format_location, unformat_location
 from .utils.user import get_user
 import json
 import requests
 from django.conf import settings
+from rate.recommender.sample_recommender import calculate_recommendations
+from rate.recommender.train_recommender import train_model
     
  
 def get_rating(request):
@@ -68,3 +70,16 @@ def update_rating(request):
     except Exception as err:
         print(err)
         return HttpResponse(json.dumps({"code": 1}))
+
+
+def get_recommendation(request):
+    user_key = get_user(request)
+    train_model()
+    recommendations = calculate_recommendations(user_key)
+    print(recommendations)
+    recommendation_list = []
+    for location_int in recommendations:
+        recommendation_list.append({"rating": recommendations[location_int], "latitude": unformat_location(location_int)[0], "longitude": unformat_location(location_int)[1]})
+    # sort by the rating from high to low
+    recommendation_list.sort(key=lambda rec: -rec["rating"])
+    return HttpResponse(recommendation_list)
