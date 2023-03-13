@@ -101,6 +101,14 @@ function App() {
         });
     }
 
+    const [ userRecommendation, setUserRecommendation ] = useState(null);
+    const getRecommendation = async () => {
+        axios.get('http://localhost:8000/getRecommendation/').then(response => {
+            setUserRecommendation(response.data);
+            console.log(response.data);
+        });
+    }
+
     // Popup window for rating
     const [open, setOpen] = React.useState(false);
     const [uiRatingValue, setUiRatingValue] = React.useState(2);
@@ -144,6 +152,7 @@ function App() {
             if (lng < bounds.NE.lng) bounds.NE.lng = lng;
             if (lng > bounds.SW.lng) bounds.SW.lng = lng;
         }
+        console.log("bounds", bounds);
 
         let heatmap_bounds = { 'max': 0, 'min': 1 };
         let grid_map = new Map();
@@ -179,9 +188,29 @@ function App() {
             grid_array[idx] = Array.from(tmp_map.values());
             idx++;
         }
+        console.log("grid_array", grid_array);
 
-        var cellSide = 0.5;
-        var grid = turf.squareGrid([bounds.SW.lng, bounds.SW.lat, bounds.NE.lng, bounds.NE.lat], cellSide, 'kilometers');
+        const lat_unit = (bounds.SW.lat - bounds.NE.lat) / 4.;
+        const lng_unit = (bounds.SW.lng - bounds.NE.lng) / 4.;
+        console.log("lat_unit", lat_unit);
+        console.log("lng_unit", lng_unit);
+
+        const boundsExtended = { 
+            'NE': { 'lat': bounds.NE.lat - lat_unit, 'lng': bounds.NE.lng - lng_unit }, 
+            'SW': { 'lat': bounds.SW.lat + lat_unit, 'lng': bounds.SW.lng + lng_unit } 
+        }
+        console.log("boundsExtended", boundsExtended);
+
+        let cellSide = lat_unit * 111;
+        console.log("cellSide", cellSide);
+
+        var grid = turf.squareGrid([
+            boundsExtended.SW.lng, 
+            boundsExtended.SW.lat, 
+            boundsExtended.NE.lng, 
+            boundsExtended.NE.lat], cellSide, 'kilometers');
+        
+        console.log("grid", grid);
 
         for (let i = 0; i < grid.features.length; i++) {
             grid.features[i].properties.highlighted = 'No';
@@ -192,10 +221,10 @@ function App() {
             grid.features[i].properties.lat = lat;
             grid.features[i].properties.lng = lng;
 
-            const lng_idx = Math.floor((lng - bounds.NE.lng) / (bounds.SW.lng - bounds.NE.lng) * grid_array.length);
-            const lat_idx = Math.floor((lat - bounds.SW.lat) / (bounds.NE.lat - bounds.SW.lat) * grid_array.length);
+            const lng_idx = Math.floor((lng - boundsExtended.NE.lng) / (boundsExtended.SW.lng - boundsExtended.NE.lng) * grid_array.length);
+            const lat_idx = Math.floor((lat - boundsExtended.SW.lat) / (boundsExtended.NE.lat - boundsExtended.SW.lat) * grid_array.length);
 
-            const heatmap_val = ((grid_array[lat_idx][lng_idx] - heatmap_bounds.min) / (heatmap_bounds.max - heatmap_bounds.min) * 5)
+            const heatmap_val = ((grid_array[lat_idx][lng_idx] - heatmap_bounds.min) / (heatmap_bounds.max - heatmap_bounds.min) * 5);
             grid.features[i].properties.bin = heatmap_val;
         }
 
@@ -276,6 +305,7 @@ function App() {
     useEffect(
         () => {
             if (user) {
+                console.log(user);
                 axios
                     .get(`https://www.googleapis.com/oauth2/v1/userinfo?access_token=${user.access_token}`, {
                         headers: {
@@ -320,9 +350,34 @@ function App() {
     };
 
     function LoginComponent() {
-        if (profile) return <Button variant="contained" onClick={logOut}>Log out</Button>
+        if (profile) {
+            return (
+                <div>
+                    <Button style={{ fontSize: '10px' }} variant="contained" onClick={showRecommendation}>Show AI Recommendation</Button>
+                    <br/>
+                    <br/>
+                    <Button variant="contained" onClick={logOut}>Log out</Button>
+                </div>
+            )
+        }
         else return <Button variant="contained" onClick={() => login()}>Log in</Button>
     }
+
+    const showRecommendation = () => {
+        getRecommendation();
+    }
+
+    useEffect(() => {
+        if (!userRecommendation) return;
+
+        console.log(userRecommendation[0]);
+        console.log(userRecommendation[0]['latitude']);
+
+
+        const marker1 = new mapboxgl.Marker()
+            .setLngLat([userRecommendation[0]['longitude'], userRecommendation[0]['latitude']])
+            .addTo(map.current);
+    }, [userRecommendation]);
 
 
     return (

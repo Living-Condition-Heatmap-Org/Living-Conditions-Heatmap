@@ -74,6 +74,16 @@ def update_rating(request):
 
 
 def get_recommendation(request):
+    # CORS preflight request
+    # This is necessary only for local env.
+    if request.method == 'OPTIONS':
+        response = HttpResponse()
+        response['Access-Control-Allow-Origin'] = 'http://localhost:8000'
+        response['Access-Control-Allow-Credentials'] = 'true'
+        response['Access-Control-Allow-Headers'] = "Authorization, Content-Type, Accept, X-CSRFToken"
+        response['Access-Control-Allow-Methods'] = "PUT, OPTIONS, HEAD"
+        return response
+        
     user_key = get_user(request)
     train_model()
     recommendations = calculate_recommendations(user_key)
