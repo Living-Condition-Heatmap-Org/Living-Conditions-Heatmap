@@ -1,7 +1,8 @@
-from file_utils import *
+from .file_utils import *
 import numpy as np
 import itertools
 from collections import defaultdict
+from ..utils.rating import get_user_ratings
 
 
 '''
@@ -10,6 +11,9 @@ Cosine Similarity(a, b) = (a.b) / (2-norm(a) * 2-norm(b))
 '''
 def cosine_similarity(a: np.ndarray, b: np.ndarray):
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+def use_get_user_ratings():
+    return get_user_ratings()
 
 
 if __name__ == "__main__":

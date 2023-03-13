@@ -6,7 +6,6 @@ from .utils.user import get_user
 import json
 import requests
 from django.conf import settings
-    
  
 def get_rating(request):
     user_key = get_user(request)
