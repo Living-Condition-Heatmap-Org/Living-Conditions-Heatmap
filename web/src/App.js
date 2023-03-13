@@ -8,8 +8,8 @@ import "normalize.css";
 
 
 import { Grid, Box } from '@material-ui/core';
-import { createTheme } from "@material-ui/core/styles";
-import { Stack, Slider, Typography } from '@mui/material';
+import { createTheme, ThemeProvider } from "@material-ui/core/styles";
+import { Stack, Slider, Typography, Button } from '@mui/material';
 import Header from './components/Header';
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN;
@@ -24,16 +24,21 @@ const prefOptions = [
     // { value: '', label: 'Vanilla' }
 ];
 
-// const theme = createTheme({
-//     palette: {
-//         primary: {
-//         main: "#006400"
-//         },
-//         secondary: {
-//         main: "#ffa500"
-//         }
-//     }
-//     });
+const theme = createTheme({
+    typography: {
+        fontSize: 24,
+    },
+    palette: {
+        primary: {
+            main: "#182B49"
+        },
+        secondary: {
+            main: "#ffa500"
+        }
+    }
+});
+
+const colorRamp = ["#feebe2", "#fcc5c0", "#fa9fb5", "#f768a1", "#dd3497", "#ae017e", "#7a0177"]
 
 
 function App() {
@@ -46,7 +51,7 @@ function App() {
 
 
     const [ user, setUser ] = useState(null);
-    const [ profile, setProfile ] = useState([]);
+    const [ profile, setProfile ] = useState(null);
 
     const [sliderWalkWeight, setSliderWalkWeight] = useState(100);
     const [sliderBikeWeight, setSliderBikeWeight] = useState(0);
@@ -60,24 +65,7 @@ function App() {
         });
     }
 
-    // Initial setup
-    useEffect(() => {
-        getData();
-
-        map.current = new mapboxgl.Map({
-            container: mapContainer.current,
-            style: 'mapbox://styles/mapbox/outdoors-v11',
-            center: [lng, lat],
-            zoom: zoom,
-            scrollZoom: true
-        });
-    }, []);
-
-    // Called when scores are downloaded or updated
-    useEffect(() => {
-
-        if (!useScores) return;
-        if (!map.current) return;
+    const updateHeatmap = () => {
 
         const data_json = useScores;
 
@@ -126,8 +114,6 @@ function App() {
             idx++;
         }
 
-        const colorRamp = ["#feebe2", "#fcc5c0", "#fa9fb5", "#f768a1", "#dd3497", "#ae017e", "#7a0177"]
-
         var cellSide = 0.5;
         var grid = turf.squareGrid([bounds.SW.lng, bounds.SW.lat, bounds.NE.lng, bounds.NE.lat], cellSide, 'kilometers');
 
@@ -144,6 +130,34 @@ function App() {
             const heatmap_val = ((grid_array[lat_idx][lng_idx] - heatmap_bounds.min) / (heatmap_bounds.max - heatmap_bounds.min) * 5)
             grid.features[i].properties.bin = heatmap_val;
         }
+
+        return grid;
+    }
+
+    // Initial setup
+    useEffect(() => {
+        getData();
+
+        map.current = new mapboxgl.Map({
+            container: mapContainer.current,
+            style: 'mapbox://styles/mapbox/outdoors-v11',
+            center: [lng, lat],
+            zoom: zoom,
+            scrollZoom: true
+        });
+    }, []);
+
+    // Called when scores are downloaded or updated
+    useEffect(() => {
+
+        console.log(useScores)
+
+        if (!useScores) return;
+        if (!map.current) return;
+
+        const grid = updateHeatmap();
+
+        console.log(grid);
 
         map.current.on('load', () => {
             console.log(`-- Loaded --`);
@@ -199,9 +213,17 @@ function App() {
             });
         });
 
+        console.log(map);
+
         // Clean up on unmount
         return () => map.current.remove();
-    }, [useScores, sliderWalkWeight, sliderBikeWeight, sliderTransitWeight, sliderSoundWeight]);
+    }, [useScores]);
+
+    useEffect(() => {
+        if (!useScores) return;
+        const grid = updateHeatmap();
+        map.current.getSource('grid-source').setData(grid);
+    }, [sliderWalkWeight, sliderBikeWeight, sliderTransitWeight, sliderSoundWeight]);
 
 
     const login = useGoogleLogin({
@@ -213,6 +235,7 @@ function App() {
     useEffect(
         () => {
             if (user) {
+                console.log(user);
                 axios
                     .get(`https://www.googleapis.com/oauth2/v1/userinfo?access_token=${user.access_token}`, {
                         headers: {
@@ -235,51 +258,46 @@ function App() {
         setProfile(null);
     };
 
-    return (
-        <Box sx={{ flexGrow: 1 }} bgcolor="primary.main">
-            <Grid item>
-                <Header />
-            </Grid>
-            <Grid item container>
-                <Grid item sm={2}>
-                    <Stack sx={{ p: 2 }}>
-                        <Typography>
-                            Walk Score Weight
-                        </Typography>
-                        <Slider onChangeCommitted={(_, v) => setSliderWalkWeight(v)} defaultValue={100}/>
-                        <Typography>
-                            Bike Score Weight
-                        </Typography>
-                        <Slider onChangeCommitted={(_, v) => setSliderBikeWeight(v)}/>
-                        <Typography>
-                            Transit Score Weight
-                        </Typography>
-                        <Slider onChangeCommitted={(_, v) => setSliderTransitWeight(v)}/>
-                        <Typography>
-                            Sound Score Weight
-                        </Typography>
-                        <Slider onChangeCommitted={(_, v) => setSliderSoundWeight(v)}/>
-                    </Stack>
-                </Grid>
-                <Grid item sm={10}>
-                    <div ref={mapContainer} className="map-container" />
+    function LoginComponent() {
+        if (profile) return  <Button variant="contained" onClick={logOut}>Log out</Button>
+        else return <Button variant="contained" onClick={() => login()}>Log in</Button>
+    }
 
-                    {profile ? (
-                        <div>
-                            <img src={profile.picture} alt="user image" />
-                            <h3>User Logged in</h3>
-                            <p>Name: {profile.name}</p>
-                            <p>Email Address: {profile.email}</p>
-                            <br />
-                            <br />
-                            <button onClick={logOut}>Log out</button>
-                        </div>
-                    ) : (
-                        <button onClick={() => login()}>Sign in with Google 🚀 </button>
-                    )}
+    return (
+        <ThemeProvider theme={theme}>
+            <Box sx={{ flexGrow: 1 }} bgcolor="primary.main">
+                <Grid item>
+                    <Header />
                 </Grid>
-            </Grid>
-        </Box>
+                <Grid item container>
+                    <Grid item sm={2}>
+                        <Stack sx={{ p: 3 }}>
+                            <Typography color="common.white" variant="body2">
+                                Walk Score Weight
+                            </Typography>
+                            <Slider onChangeCommitted={(_, v) => setSliderWalkWeight(v)} defaultValue={100}/>
+                            <Typography color="common.white" variant="body2">
+                                Bike Score Weight
+                            </Typography>
+                            <Slider onChangeCommitted={(_, v) => setSliderBikeWeight(v)}/>
+                            <Typography color="common.white" variant="body2">
+                                Transit Score Weight
+                            </Typography>
+                            <Slider onChangeCommitted={(_, v) => setSliderTransitWeight(v)}/>
+                            <Typography color="common.white" variant="body2">
+                                Sound Score Weight
+                            </Typography>
+                            <Slider onChangeCommitted={(_, v) => setSliderSoundWeight(v)}/>
+                            <br/>
+                            <LoginComponent/>
+                        </Stack>
+                    </Grid>
+                    <Grid item sm={10}>
+                        <div ref={mapContainer} className="map-container" />
+                    </Grid>
+                </Grid>
+            </Box>
+        </ThemeProvider>
     );
 }
 
