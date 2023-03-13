@@ -123,3 +123,9 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# get user info
+AUTHENTICATION_URL = 'https://www.googleapis.com/oauth2/v1/userinfo?access_token='
+
+
+AUTHORIZATION_HEADER = 'HTTP_AUTHORIZATION'
