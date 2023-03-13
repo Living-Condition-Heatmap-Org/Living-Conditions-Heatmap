@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import * as turf from '@turf/turf'
-import { GoogleLogin, useGoogleLogin, googleLogout} from '@react-oauth/google';
+import { useGoogleLogin, googleLogout} from '@react-oauth/google';
 import axios from 'axios';
 
 import "normalize.css";
@@ -16,16 +16,6 @@ import Dialog from '@mui/material/Dialog';
 import Header from './components/Header';
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN;
-
-const prefOptions = [
-    { value: 'walk', label: 'Walk Score' },
-    { value: 'bike', label: 'Bike Score' },
-    { value: 'transit', label: 'Transit Score' },
-    { value: 'sound', label: 'Sound Score' },
-    // { value: 'grocery', label: 'Vanilla' },
-    // { value: 'school', label: 'Vanilla' },
-    // { value: '', label: 'Vanilla' }
-];
 
 const theme = createTheme({
     typography: {
@@ -50,8 +40,6 @@ function findCenter(loc) {
 }
 
 
-const emails = ['username@gmail.com', 'user02@gmail.com'];
-
 function SimpleDialog(props) {
     const { onClose, open, onClick } = props;
 
@@ -61,13 +49,17 @@ function SimpleDialog(props) {
 
     return (
         <Dialog onClose={handleClose} open={open}>
-        <DialogTitle>Set backup account</DialogTitle>
-        <Rating
-            name="simple-controlled"
-            onChange={(event, newValue) => {
-                onClick(newValue);
-            }}
-        />
+        <DialogTitle>How do you rate this location?</DialogTitle>
+        <Box sx={{ mb: 2, mt: -1 }}>
+            <center>
+                <Rating
+                    name="simple-controlled"
+                    onChange={(event, newValue) => {
+                        onClick(newValue);
+                    }}
+                />
+            </center>
+        </Box>
         </Dialog>
     );
 }
@@ -85,8 +77,6 @@ function App() {
     const [lng, setLng] = useState(-117.2376); // eslint-disable-line no-unused-vars
     const [lat, setLat] = useState(32.8811); // eslint-disable-line no-unused-vars
     const [zoom, setZoom] = useState(13); // eslint-disable-line no-unused-vars
-    const [flag, setFlag] = useState(false); // eslint-disable-line no-unused-vars
-
 
     const [ user, setUser ] = useState(null);
     const [ profile, setProfile ] = useState(null);
@@ -233,8 +223,6 @@ function App() {
 
         const grid = updateHeatmap();
 
-        console.log(grid);
-
         map.current.on('load', () => {
             console.log(`-- Loaded --`);
             map.current.addSource('grid-source', {
@@ -268,8 +256,6 @@ function App() {
             });
         });
 
-        console.log(map);
-
         // Clean up on unmount
         return () => map.current.remove();
     }, [defaultScores]);
@@ -279,12 +265,6 @@ function App() {
         const grid = updateHeatmap();
         map.current.getSource('grid-source').setData(grid);
     }, [sliderWalkWeight, sliderBikeWeight, sliderTransitWeight, sliderSoundWeight]);
-
-    useEffect(() => {
-        if (!userRatings) return;
-        console.log("userRatings");
-        console.log(userRatings);
-    }, [userRatings]);
 
 
     const login = useGoogleLogin({
@@ -296,7 +276,6 @@ function App() {
     useEffect(
         () => {
             if (user) {
-                console.log(user);
                 axios
                     .get(`https://www.googleapis.com/oauth2/v1/userinfo?access_token=${user.access_token}`, {
                         headers: {
@@ -312,7 +291,6 @@ function App() {
                 axios.defaults.headers.put['Authorization'] = `Bearer ${user.access_token}`;
                 axios.defaults.headers.get['Authorization'] = `Bearer ${user.access_token}`;
     
-                console.log("calling getUserRatings");
                 getUserRatings();
 
                 // Register click event for the rating.
@@ -346,17 +324,6 @@ function App() {
         else return <Button variant="contained" onClick={() => login()}>Log in</Button>
     }
 
-    function userRatingsComponent() {
-        if (userRatings) {
-            return (
-                <Typography color="common.white" variant="body2">
-                    This is a table.
-                </Typography>
-            )
-        } else {
-            return <div></div>;
-        }
-    }
 
     return (
         <ThemeProvider theme={theme}>
