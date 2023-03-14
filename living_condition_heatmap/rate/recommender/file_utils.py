@@ -1,5 +1,21 @@
 import os
 import json
+import yaml
+
+def read_file_in_dir_yaml(root_dir, file_name):
+    path = os.path.join(root_dir, file_name)
+    if os.path.isfile(path):
+        with open(path) as file:
+            data = yaml.safe_load(file)
+        return data
+    else:
+        raise Exception("file doesn't exist: ", path)
+
+def write_to_file_in_dir_yaml(root_dir, file_name, data):
+    path = os.path.join(root_dir, file_name)
+    with open(path, "w") as file:
+        yaml.dump(data, file)
+    
 
 def read_file(path):
     if os.path.isfile(path):
