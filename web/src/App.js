@@ -148,7 +148,7 @@ function App() {
     // Returns the grid object that can be used for updating the heatmap; no side effect.
     const updateHeatmap = () => {
 
-        const data = defaultScores;
+        let data = defaultScores;
 
         // Find the bounds of the heatmap.
         // North East: Smallest latitude, largest longitude
@@ -193,9 +193,11 @@ function App() {
             let val_bike = (data[i]['bikeScore'] - property_ranges['bikeScore']['min']) / (property_ranges['bikeScore']['max'] - property_ranges['bikeScore']['min']);
             let val_transit = (data[i]['transitScore'] - property_ranges['transitScore']['min']) / (property_ranges['transitScore']['max'] - property_ranges['transitScore']['min']);
             let val_sound = (data[i]['soundScore'] - property_ranges['soundScore']['min']) / (property_ranges['soundScore']['max'] - property_ranges['soundScore']['min']);
-            let val_grocery = (data[i]['nearestGrocery'] - property_ranges['nearestGrocery']['min']) / (property_ranges['nearestGrocery']['max'] - property_ranges['nearestGrocery']['min']);
-            let val_school =(data[i]['nearestSchool'] - property_ranges['nearestSchool']['min']) / (property_ranges['nearestSchool']['max'] - property_ranges['nearestSchool']['min']);
-            let val_stop = (data[i]['nearestTransit'] - property_ranges['nearestTransit']['min']) / (property_ranges['nearestTransit']['max'] - property_ranges['nearestTransit']['min']);
+            
+            // Invert nearest distance to proximity score
+            let val_grocery = (property_ranges['nearestGrocery']['max'] - data[i]['nearestGrocery']) / (property_ranges['nearestGrocery']['max'] - property_ranges['nearestGrocery']['min']);
+            let val_school =(property_ranges['nearestSchool']['max'] - data[i]['nearestSchool']) / (property_ranges['nearestSchool']['max'] - property_ranges['nearestSchool']['min']);
+            let val_stop = (property_ranges['nearestTransit']['max'] - data[i]['nearestTransit']) / (property_ranges['nearestTransit']['max'] - property_ranges['nearestTransit']['min']);
 
             // console.log(val_walk, val_bike, val_transit, val_sound, val_grocery, val_school, val_stop);
 
@@ -232,8 +234,8 @@ function App() {
         const lng_unit = (bounds.max.lng - bounds.min.lng) / 4.;
         // const boundsExtended = bounds;
         const boundsExtended = { 
-            'min': { 'lat': bounds.min.lat - lat_unit, 'lng': bounds.min.lng - lng_unit }, 
-            'max': { 'lat': bounds.max.lat + lat_unit, 'lng': bounds.max.lng + lng_unit } 
+            'min': { 'lat': bounds.min.lat - lat_unit / 2, 'lng': bounds.min.lng - lng_unit / 2 }, 
+            'max': { 'lat': bounds.max.lat + lat_unit / 2, 'lng': bounds.max.lng + lng_unit / 2 } 
         }
 
 
