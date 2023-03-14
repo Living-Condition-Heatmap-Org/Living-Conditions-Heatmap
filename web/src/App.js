@@ -87,6 +87,10 @@ function App() {
     const [sliderBikeWeight, setSliderBikeWeight] = useState(0);
     const [sliderTransitWeight, setSliderTransitWeight] = useState(0);
     const [sliderSoundWeight, setSliderSoundWeight] = useState(0);
+    const [sliderGroceryWeight, setSliderGroceryWeight] = useState(0);
+    const [sliderSchoolWeight, setSliderSchoolWeight] = useState(0);
+    const [sliderStopWeight, setSliderStopWeight] = useState(0);
+
 
     const [ defaultScores, setDefaultScores ] = useState(null);
     const getScores = async () => {
@@ -144,34 +148,66 @@ function App() {
     // Returns the grid object that can be used for updating the heatmap; no side effect.
     const updateHeatmap = () => {
 
-        const data_json = defaultScores;
+        const data = defaultScores;
 
         // Find the bounds of the heatmap.
-        let bounds = { 'NE': { 'lat': 90, 'lng': 180 }, 'SW': { 'lat': -90, 'lng': -180 } }
-        for (let i = 0; i < data_json.length; i++) {
-            const lat = data_json[i]['latitude'];
-            const lng = data_json[i]['longitude'];
-            if (lat < bounds.NE.lat) bounds.NE.lat = lat;
-            if (lat > bounds.SW.lat) bounds.SW.lat = lat;
-            if (lng < bounds.NE.lng) bounds.NE.lng = lng;
-            if (lng > bounds.SW.lng) bounds.SW.lng = lng;
+        // North East: Smallest latitude, largest longitude
+        // South West: Largest latitude, smallest longitude
+        let bounds = { 'min': { 'lat': 90, 'lng': 180 }, 'max': { 'lat': -90, 'lng': -180 } }
+        for (let i = 0; i < data.length; i++) {
+            const lat = data[i]['latitude'];
+            const lng = data[i]['longitude'];
+            if (lat < bounds.min.lat) bounds.min.lat = lat;
+            if (lat > bounds.max.lat) bounds.max.lat = lat;
+            if (lng < bounds.min.lng) bounds.min.lng = lng;
+            if (lng > bounds.max.lng) bounds.max.lng = lng;
+        }
+
+        // console.log("bounds", bounds);
+
+        let property_ranges = {
+            'walkScore': {'max':0, 'min':100},
+            'bikeScore': {'max':0, 'min':100},
+            'transitScore': {'max':0, 'min':100},
+            'soundScore': {'max':0, 'min':100},
+            'nearestGrocery': {'max':0, 'min':100},
+            'nearestSchool': {'max':0, 'min':100},
+            'nearestTransit': {'max':0, 'min':100}
+        }
+
+        // Compute the max and min for each property for normalization
+        for (let i = 0; i < data.length; i++) {
+            for (let key in property_ranges) {
+                if (data[i][key] < property_ranges[key]['min']) property_ranges[key]['min'] = data[i][key];
+                if (data[i][key] > property_ranges[key]['max']) property_ranges[key]['max'] = data[i][key];
+            }
         }
 
         let heatmap_bounds = { 'max': 0, 'min': 1 };
         let grid_map = new Map();
-        for (let i = 0; i < data_json.length; i++) {
-            const lat = data_json[i]['latitude'];
-            const lng = data_json[i]['longitude'];
+        for (let i = 0; i < data.length; i++) {
+            const lat = data[i]['latitude'];
+            const lng = data[i]['longitude'];
 
-            let val_walk = data_json[i]['walkScore'];
-            let val_bike = data_json[i]['bikeScore'];
-            let val_transit = data_json[i]['transitScore'];
-            let val_sound = data_json[i]['soundScore'];
+            let val_walk = (data[i]['walkScore'] - property_ranges['walkScore']['min']) / (property_ranges['walkScore']['max'] - property_ranges['walkScore']['min']);
+            let val_bike = (data[i]['bikeScore'] - property_ranges['bikeScore']['min']) / (property_ranges['bikeScore']['max'] - property_ranges['bikeScore']['min']);
+            let val_transit = (data[i]['transitScore'] - property_ranges['transitScore']['min']) / (property_ranges['transitScore']['max'] - property_ranges['transitScore']['min']);
+            let val_sound = (data[i]['soundScore'] - property_ranges['soundScore']['min']) / (property_ranges['soundScore']['max'] - property_ranges['soundScore']['min']);
+            let val_grocery = (data[i]['nearestGrocery'] - property_ranges['nearestGrocery']['min']) / (property_ranges['nearestGrocery']['max'] - property_ranges['nearestGrocery']['min']);
+            let val_school =(data[i]['nearestSchool'] - property_ranges['nearestSchool']['min']) / (property_ranges['nearestSchool']['max'] - property_ranges['nearestSchool']['min']);
+            let val_stop = (data[i]['nearestTransit'] - property_ranges['nearestTransit']['min']) / (property_ranges['nearestTransit']['max'] - property_ranges['nearestTransit']['min']);
 
-            let val = val_walk * sliderWalkWeight
-                + val_bike * sliderBikeWeight
-                + val_transit * sliderTransitWeight
-                + val_sound * sliderSoundWeight;
+            // console.log(val_walk, val_bike, val_transit, val_sound, val_grocery, val_school, val_stop);
+
+            let val = val_walk * sliderWalkWeight / 100.0
+                + val_bike * sliderBikeWeight / 100.0
+                + val_transit * sliderTransitWeight / 100.0
+                + val_sound * sliderSoundWeight / 100.0
+                + val_grocery * sliderGroceryWeight / 100.0
+                + val_school * sliderSchoolWeight / 100.0
+                + val_stop * sliderStopWeight / 100.0;
+            
+            // console.log(val);
             
             if (!grid_map.has(lat)) {
                 grid_map.set(lat, new Map());
@@ -192,21 +228,25 @@ function App() {
             idx++;
         }
 
-        const lat_unit = (bounds.SW.lat - bounds.NE.lat) / 4.;
-        const lng_unit = (bounds.SW.lng - bounds.NE.lng) / 4.;
+        const lat_unit = (bounds.max.lat - bounds.min.lat) / 4.;
+        const lng_unit = (bounds.max.lng - bounds.min.lng) / 4.;
+        // const boundsExtended = bounds;
         const boundsExtended = { 
-            'NE': { 'lat': bounds.NE.lat - lat_unit, 'lng': bounds.NE.lng - lng_unit }, 
-            'SW': { 'lat': bounds.SW.lat + lat_unit, 'lng': bounds.SW.lng + lng_unit } 
+            'min': { 'lat': bounds.min.lat - lat_unit, 'lng': bounds.min.lng - lng_unit }, 
+            'max': { 'lat': bounds.max.lat + lat_unit, 'lng': bounds.max.lng + lng_unit } 
         }
 
+
+        // console.log("boundsExtended", boundsExtended);
+
         // 1 degree in latitude is about 111 kilometers.
-        let cellSide = lat_unit * 111;
+        let cellSide = lat_unit * 111 / 2;
 
         var grid = turf.squareGrid([
-            boundsExtended.SW.lng, 
-            boundsExtended.SW.lat, 
-            boundsExtended.NE.lng, 
-            boundsExtended.NE.lat], cellSide, 'kilometers');
+            boundsExtended.min.lng, 
+            boundsExtended.min.lat, 
+            boundsExtended.max.lng, 
+            boundsExtended.max.lat], cellSide, 'kilometers');
 
         for (let i = 0; i < grid.features.length; i++) {
             grid.features[i].properties.highlighted = 'No';
@@ -217,11 +257,12 @@ function App() {
             grid.features[i].properties.lat = lat;
             grid.features[i].properties.lng = lng;
 
-            const lng_idx = Math.floor((lng - boundsExtended.NE.lng) / (boundsExtended.SW.lng - boundsExtended.NE.lng) * grid_array.length);
-            const lat_idx = Math.floor((lat - boundsExtended.SW.lat) / (boundsExtended.NE.lat - boundsExtended.SW.lat) * grid_array.length);
+            const lng_idx = Math.floor((lng - boundsExtended.min.lng) / (boundsExtended.max.lng - boundsExtended.min.lng) * grid_array.length);
+            const lat_idx = Math.floor((lat - boundsExtended.min.lat) / (boundsExtended.max.lat - boundsExtended.min.lat) * grid_array.length);
 
             const heatmap_val = ((grid_array[lat_idx][lng_idx] - heatmap_bounds.min) / (heatmap_bounds.max - heatmap_bounds.min) * 5);
             grid.features[i].properties.bin = heatmap_val;
+            // console.log("heatmap_val", heatmap_val);
         }
 
         return grid;
@@ -290,7 +331,7 @@ function App() {
         if (!defaultScores) return;
         const grid = updateHeatmap();
         map.current.getSource('grid-source').setData(grid);
-    }, [sliderWalkWeight, sliderBikeWeight, sliderTransitWeight, sliderSoundWeight]);
+    }, [sliderWalkWeight, sliderBikeWeight, sliderTransitWeight, sliderSoundWeight, sliderGroceryWeight, sliderSchoolWeight, sliderStopWeight]);
 
 
     const login = useGoogleLogin({
@@ -368,8 +409,11 @@ function App() {
     // Show the best recommended location on the map.
     useEffect(() => {
         if (!userRecommendation) return;
-        const marker1 = new mapboxgl.Marker()
+        new mapboxgl.Marker()
             .setLngLat([userRecommendation[0]['longitude'], userRecommendation[0]['latitude']])
+            .addTo(map.current);
+        new mapboxgl.Marker()
+            .setLngLat([userRecommendation[1]['longitude'], userRecommendation[1]['latitude']])
             .addTo(map.current);
     }, [userRecommendation]);
 
@@ -384,7 +428,7 @@ function App() {
                     <Grid item sm={2}>
                         <Stack sx={{ p: 3 }}>
                             <Typography color="common.white" variant="body2">
-                                Walk Score Weight
+                                Walkability Score Weight
                             </Typography>
                             <Slider onChangeCommitted={(_, v) => setSliderWalkWeight(v)} defaultValue={100}/>
                             <Typography color="common.white" variant="body2">
@@ -392,13 +436,25 @@ function App() {
                             </Typography>
                             <Slider onChangeCommitted={(_, v) => setSliderBikeWeight(v)}/>
                             <Typography color="common.white" variant="body2">
-                                Transit Score Weight
+                                Overall Transit Score Weight
                             </Typography>
                             <Slider onChangeCommitted={(_, v) => setSliderTransitWeight(v)}/>
                             <Typography color="common.white" variant="body2">
-                                Sound Score Weight
+                                Quietness Weight
                             </Typography>
                             <Slider onChangeCommitted={(_, v) => setSliderSoundWeight(v)}/>
+                            <Typography color="common.white" variant="body2">
+                                Grocery Proximity Weight
+                            </Typography>
+                            <Slider onChangeCommitted={(_, v) => setSliderGroceryWeight(v)}/>
+                            <Typography color="common.white" variant="body2">
+                                School Proximity Weight
+                            </Typography>
+                            <Slider onChangeCommitted={(_, v) => setSliderSchoolWeight(v)}/>
+                            <Typography color="common.white" variant="body2">
+                                Transit Proximity Weight
+                            </Typography>
+                            <Slider onChangeCommitted={(_, v) => setSliderStopWeight(v)}/>
                             <br/>
                             <LoginComponent/>
                         </Stack>
