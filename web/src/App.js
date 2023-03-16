@@ -76,6 +76,8 @@ SimpleDialog.propTypes = {
 function App() {
     const mapContainer = useRef(null);
     const map = useRef(null);
+    const RECOMMENDATION_COUNT = 2;
+
     const [lng, setLng] = useState(-117.2376); // eslint-disable-line no-unused-vars
     const [lat, setLat] = useState(32.8811); // eslint-disable-line no-unused-vars
     const [zoom, setZoom] = useState(13); // eslint-disable-line no-unused-vars
@@ -90,6 +92,8 @@ function App() {
     const [sliderGroceryWeight, setSliderGroceryWeight] = useState(0);
     const [sliderSchoolWeight, setSliderSchoolWeight] = useState(0);
     const [sliderStopWeight, setSliderStopWeight] = useState(0);
+
+    const [recommendationMarkers, setRecommendationMarkers] = useState([]);
 
 
     const [ defaultScores, setDefaultScores ] = useState(null);
@@ -411,12 +415,20 @@ function App() {
     // Show the best recommended location on the map.
     useEffect(() => {
         if (!userRecommendation) return;
-        new mapboxgl.Marker()
-            .setLngLat([userRecommendation[0]['longitude'], userRecommendation[0]['latitude']])
-            .addTo(map.current);
-        new mapboxgl.Marker()
-            .setLngLat([userRecommendation[1]['longitude'], userRecommendation[1]['latitude']])
-            .addTo(map.current);
+
+        for (let i = 0; i < recommendationMarkers.length; i++) {
+            recommendationMarkers[i].remove();
+        }
+
+        setRecommendationMarkers([]);
+
+        for (let i = 0; i < RECOMMENDATION_COUNT; i++) {
+            const marker = new mapboxgl.Marker()
+                .setLngLat([userRecommendation[i]['longitude'], userRecommendation[i]['latitude']])
+                .addTo(map.current);
+            setRecommendationMarkers(prevArray => [...prevArray, marker]);
+        }
+
     }, [userRecommendation]);
 
 
