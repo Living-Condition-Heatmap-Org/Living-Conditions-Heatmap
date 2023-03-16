@@ -76,7 +76,6 @@ SimpleDialog.propTypes = {
 function App() {
     const mapContainer = useRef(null);
     const map = useRef(null);
-    let recommendationMarkers = [];
     const RECOMMENDATION_COUNT = 2;
 
     const [lng, setLng] = useState(-117.2376); // eslint-disable-line no-unused-vars
@@ -93,6 +92,8 @@ function App() {
     const [sliderGroceryWeight, setSliderGroceryWeight] = useState(0);
     const [sliderSchoolWeight, setSliderSchoolWeight] = useState(0);
     const [sliderStopWeight, setSliderStopWeight] = useState(0);
+
+    const [recommendationMarkers, setRecommendationMarkers] = useState([]);
 
 
     const [ defaultScores, setDefaultScores ] = useState(null);
@@ -418,16 +419,15 @@ function App() {
         for (let i = 0; i < recommendationMarkers.length; i++) {
             recommendationMarkers[i].remove();
         }
-        recommendationMarkers = [];
+
+        setRecommendationMarkers([]);
 
         for (let i = 0; i < RECOMMENDATION_COUNT; i++) {
             const marker = new mapboxgl.Marker()
                 .setLngLat([userRecommendation[i]['longitude'], userRecommendation[i]['latitude']])
                 .addTo(map.current);
-            recommendationMarkers.push(marker);
+            setRecommendationMarkers(prevArray => [...prevArray, marker]);
         }
-
-        console.log(recommendationMarkers);
 
     }, [userRecommendation]);
 
